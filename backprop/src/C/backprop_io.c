@@ -342,9 +342,11 @@ static size_t json_fscanarray_float(FILE* file, BACKPROP_FLOAT_T* dest, size_t d
 static size_t json_fprintarray_byte(FILE* file, const BACKPROP_BYTE_T* array, size_t size)
 {
   BACKPROP_IO_ASSERT(file);
-  BACKPROP_IO_ASSERT(array);
-  BACKPROP_IO_ASSERT(size);
 
+  if (!array || !size)
+  {
+    return 0;
+  }
 
   size_t file_count = 0;
 

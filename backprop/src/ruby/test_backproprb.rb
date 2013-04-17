@@ -348,11 +348,11 @@ end
 
 class BackproprbTrainingSetTestCase < Test::Unit::TestCase
 
-  def test_new
+  def test__new
     training_set = Backproprb::TrainingSet.new ["a", "b", "c"], ["x", "y", "z"]
   end
 
-  def test_to_hash
+  def test__to_hash
     training_set = Backproprb::TrainingSet.new ["a", "b", "c"], ["x", "y", "z"]
 
     hash = training_set.to_hash
@@ -363,7 +363,7 @@ class BackproprbTrainingSetTestCase < Test::Unit::TestCase
 
   end
 
-  def test_count
+  def test__count
     training_set = Backproprb::TrainingSet.new ["a"], ["x"]
 
     result = training_set.count
@@ -382,7 +382,7 @@ class BackproprbTrainingSetTestCase < Test::Unit::TestCase
     assert_equal(3, result)
   end
 
-  def test_x_size
+  def test__x_size
     training_set = Backproprb::TrainingSet.new ["a", "b", "c"], ["x", "y", "z"]
 
     result = training_set.x_size
@@ -394,7 +394,7 @@ class BackproprbTrainingSetTestCase < Test::Unit::TestCase
     assert_equal(2, result)
   end
 
-  def test_y_size
+  def test__y_size
     training_set = Backproprb::TrainingSet.new ["a", "b", "c"], ["x", "y", "z"]
 
     result = training_set.y_size
@@ -407,7 +407,7 @@ class BackproprbTrainingSetTestCase < Test::Unit::TestCase
   end
 
 
-  def test_x_at
+  def test__x_at
     training_set = Backproprb::TrainingSet.new ["a", "b", "c"], ["x", "y", "z"]
 
     result = training_set.x_at 0
@@ -421,7 +421,7 @@ class BackproprbTrainingSetTestCase < Test::Unit::TestCase
   end
 
 
-  def test_y_at
+  def test__y_at
     training_set = Backproprb::TrainingSet.new ["a", "b", "c"], ["x", "y", "z"]
 
     result = training_set.y_at 0
@@ -432,6 +432,19 @@ class BackproprbTrainingSetTestCase < Test::Unit::TestCase
 
     result = training_set.y_at 2
     assert_equal("z", result)
+  end
+
+
+  def test__to_file__from_file
+    filename = "#{self.class}_#{__method__}.txt"
+
+    sut1 = Backproprb::TrainingSet.new ["a", "b", "c"], ["x", "y", "z"]
+    sut1.to_file filename
+
+    sut2 = Backproprb::TrainingSet.new nil, nil
+    sut2.from_file filename
+
+    assert_equal sut1.to_hash, sut2.to_hash
   end
 end
 

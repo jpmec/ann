@@ -1294,6 +1294,38 @@ static VALUE cBackpropTrainingSet_to_hash(VALUE self)
 
 
 
+static VALUE cBackpropTrainingSet_to_file(VALUE self, VALUE file_name_val)
+{
+  BACKPROP_TRACE(__FUNCTION__);
+
+  VALUE_TO_C_PTR(BackpropTrainingSet_t, training_set, self);
+
+  const char* file_name = StringValueCStr(file_name_val);
+
+  BackpropTrainingSet_Save(training_set, file_name);
+
+  return self;
+}
+
+
+
+
+static VALUE cBackpropTrainingSet_from_file(VALUE self, VALUE file_name_val)
+{
+  BACKPROP_TRACE(__FUNCTION__);
+
+  VALUE_TO_C_PTR(BackpropTrainingSet_t, training_set, self);
+
+  const char* file_name = StringValueCStr(file_name_val);
+
+  BackpropTrainingSet_Load(training_set, file_name);
+
+  return self;
+}
+
+
+
+
 static VALUE cBackpropTrainingSet_initialize(VALUE self)
 {
   BACKPROP_TRACE(__FUNCTION__);
@@ -1304,7 +1336,7 @@ static VALUE cBackpropTrainingSet_initialize(VALUE self)
 
 
 
-static void cBackpropTrainingSet_Free(struct BackpropTrainingSet* self)
+static void cBackpropTrainingSet_free(struct BackpropTrainingSet* self)
 {
   BACKPROP_TRACE(__FUNCTION__);
 
@@ -1318,49 +1350,59 @@ static VALUE cBackpropTrainingSet_new(VALUE klass, VALUE x_value, VALUE y_value)
 {
   BACKPROP_TRACE(__FUNCTION__);
 
-  VALUE x_count = rb_funcall(x_value, rb_intern("size"),  0);
-  VALUE y_count = rb_funcall(y_value, rb_intern("size"),  0);
+  size_t count = 0;
+  size_t x_size = 0;
+  size_t y_size = 0;
 
-  if (x_count != y_count)
+  if ((x_value != Qnil) || (y_value != Qnil))
   {
-    return Qnil;
+    VALUE x_count = rb_funcall(x_value, rb_intern("size"),  0);
+    VALUE y_count = rb_funcall(y_value, rb_intern("size"),  0);
+
+    if (x_count != y_count)
+    {
+      return Qnil;
+    }
+
+    VALUE x_str_val = rb_funcall(x_value, rb_intern("at"), 1, INT2NUM(0));
+    VALUE y_str_val = rb_funcall(y_value, rb_intern("at"), 1, INT2NUM(0));
+
+    VALUE x_size_val = rb_funcall(x_str_val, rb_intern("size"), 0);
+    VALUE y_size_val = rb_funcall(y_str_val, rb_intern("size"), 0);
+
+    count = NUM2INT(x_count);
+    x_size = NUM2INT(x_size_val);
+    y_size = NUM2INT(y_size_val);
   }
-
-  VALUE x_str_val = rb_funcall(x_value, rb_intern("at"), 1, INT2NUM(0));
-  VALUE y_str_val = rb_funcall(y_value, rb_intern("at"), 1, INT2NUM(0));
-
-  VALUE x_size_val = rb_funcall(x_str_val, rb_intern("size"), 0);
-  VALUE y_size_val = rb_funcall(y_str_val, rb_intern("size"), 0);
-
-  size_t count = NUM2INT(x_count);
-  size_t x_size = NUM2INT(x_size_val);
-  size_t y_size = NUM2INT(y_size_val);
 
   BackpropTrainingSet_t* instance = BackpropTrainingSet_Malloc(count, x_size, y_size);
 
   // wrap it in a ruby object, this will cause GC to call free function
-  VALUE tdata = Data_Wrap_Struct(klass, 0, cBackpropTrainingSet_Free, instance);
+  VALUE tdata = Data_Wrap_Struct(klass, 0, cBackpropTrainingSet_free, instance);
 
   // call initialize
   //VALUE argv[3] = {count, x_size, y_size};
   //  rb_obj_call_init(tdata, 0, 0);
 
-  for (size_t i = 0; i < count; ++i)
+  if ((x_value != Qnil) || (y_value != Qnil))
   {
-    VALUE x_str_val = rb_funcall(x_value, rb_intern("at"), 1, INT2NUM(i));
-    char* x_str = StringValueCStr(x_str_val);
+    for (size_t i = 0; i < count; ++i)
+    {
+      VALUE x_str_val = rb_funcall(x_value, rb_intern("at"), 1, INT2NUM(i));
+      char* x_str = StringValueCStr(x_str_val);
 
-    BACKPROP_BYTE_T* x = instance->x + i * x_size;
-    memcpy(x, x_str, x_size);
-  }
+      BACKPROP_BYTE_T* x = instance->x + i * x_size;
+      memcpy(x, x_str, x_size);
+    }
 
-  for (size_t j = 0; j < count; ++j)
-  {
-    VALUE y_str_val = rb_funcall(y_value, rb_intern("at"), 1, INT2NUM(j));
-    char* y_str = StringValueCStr(y_str_val);
+    for (size_t j = 0; j < count; ++j)
+    {
+      VALUE y_str_val = rb_funcall(y_value, rb_intern("at"), 1, INT2NUM(j));
+      char* y_str = StringValueCStr(y_str_val);
 
-    BACKPROP_BYTE_T* y = instance->y + j * y_size;
-    memcpy(y, y_str, y_size);
+      BACKPROP_BYTE_T* y = instance->y + j * y_size;
+      memcpy(y, y_str, y_size);
+    }
   }
 
   return tdata;
@@ -2705,6 +2747,9 @@ void Init_cbackproprb()
   rb_define_method(cBackpropTrainingSet, "y_at", cBackpropTrainingSet_y_at, 1);
 
   rb_define_method(cBackpropTrainingSet, "to_hash", cBackpropTrainingSet_to_hash, 0);
+  rb_define_method(cBackpropTrainingSet, "to_file", cBackpropTrainingSet_to_file, 1);
+  rb_define_method(cBackpropTrainingSet, "from_file", cBackpropTrainingSet_from_file, 1);
+
 
   // Define class CBackproprb::CExerciseStats
   cBackpropExerciseStats = rb_define_class_under(cBackproprb, "CExerciseStats", rb_cObject);
@@ -2784,4 +2829,3 @@ void Init_cbackproprb()
   rb_define_method(cBackpropEvolver, "set_to_default", cBackpropEvolver_set_to_default, 0);
   rb_define_method(cBackpropEvolver, "evolve", cBackpropEvolver_evolve, 6);
 }
-

@@ -1362,10 +1362,6 @@ void BackpropNetwork_GetStats(const struct BackpropNetwork* self, BackpropNetwor
 
 BackpropTrainingSet_t* BackpropTrainingSet_Malloc(size_t count, size_t x_size, size_t y_size)
 {
-  BACKPROP_ASSERT(count);
-  BACKPROP_ASSERT(x_size);
-  BACKPROP_ASSERT(y_size);
-
   BackpropTrainingSet_t* self = Backprop_Malloc(sizeof(BackpropTrainingSet_t));
 
   self->dims.count = count;
@@ -1373,8 +1369,15 @@ BackpropTrainingSet_t* BackpropTrainingSet_Malloc(size_t count, size_t x_size, s
   self->dims.x_size = x_size;
   self->dims.y_size = y_size;
 
-  self->x = Backprop_Malloc(count * x_size);
-  self->y = Backprop_Malloc(count * y_size);
+  if (count && x_size)
+  {
+    self->x = Backprop_Malloc(count * x_size);
+  }
+
+  if (count && y_size)
+  {
+    self->y = Backprop_Malloc(count * y_size);
+  }
 
   return self;
 }
