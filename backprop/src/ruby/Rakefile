@@ -1,0 +1,21 @@
+
+
+task :clean do
+  
+  `clear`
+  `make clean`
+  ruby "extconf.rb"
+  
+  make_errors = `make 2>&1 | grep "error:"`
+  fail make_errors if make_errors.size != 0
+  
+  puts `make install`
+  
+  ruby "test_backproprb.rb"
+  
+end
+
+
+
+
+task :default => [:clean]
