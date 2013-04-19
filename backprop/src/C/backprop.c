@@ -778,6 +778,16 @@ const BackpropLayersArray_t* BackpropNetwork_GetLayers(const struct BackpropNetw
 
 
 
+BACKPROP_SIZE_T BackpropNetwork_GetLayersCount(const struct BackpropNetwork* self)
+{
+  BACKPROP_ASSERT(self);
+
+  return self->layers.count;
+}
+
+
+
+
 
 BACKPROP_FLOAT_T BackpropNetwork_GetJitter(const struct BackpropNetwork* self)
 {
@@ -1521,7 +1531,7 @@ BACKPROP_FLOAT_T BackpropLearningAccelerator_Accelerate(BackpropLearningAccelera
 /** Backprop Trainer structure.
  *  Holds parameters that affect network training.
  */
-typedef struct BackpropTrainer
+struct BackpropTrainer
 {
   BACKPROP_FLOAT_T error_tolerance;                   ///< Minimum allowable error for network to be considered trained.
   BACKPROP_FLOAT_T learning_rate;                     ///< Weight adjustment factor used when training networks.
@@ -1550,7 +1560,7 @@ typedef struct BackpropTrainer
 
   struct BackpropTrainerEvents events;                ///< Structure of event callback function pointers.
 
-} BackpropTrainer_t;
+};
 
 
 
@@ -1623,17 +1633,6 @@ void BackpropTrainer_Free(BackpropTrainer_t* trainer)
 
 
 
-
-BACKPROP_FLOAT_T BackpropTrainer_GetErrorTolerance(const BackpropTrainer_t* self)
-{
-  BACKPROP_ASSERT(self);
-
-  return self->error_tolerance;
-}
-
-
-
-
 struct BackpropTrainerEvents* BackpropTrainer_GetEvents(BackpropTrainer_t* self)
 {
   BACKPROP_ASSERT(self);
@@ -1669,6 +1668,306 @@ void BackpropTrainer_SetToDefault(BackpropTrainer_t* self)
   self->training_ratio = 0.5;
 
   BackpropLearningAccelerator_SetToDefault(&self->learning_accelerator);
+}
+
+
+
+
+BACKPROP_FLOAT_T BackpropTrainer_GetErrorTolerance(const struct BackpropTrainer* self)
+{
+  BACKPROP_ASSERT(self);
+
+  return self->error_tolerance;
+}
+
+
+
+
+void BackpropTrainer_SetErrorTolerance(struct BackpropTrainer* self, BACKPROP_FLOAT_T value)
+{
+  BACKPROP_ASSERT(self);
+
+  self->error_tolerance = value;
+}
+
+
+
+
+BACKPROP_FLOAT_T BackpropTrainer_GetLearningRate(const struct BackpropTrainer* self)
+{
+  BACKPROP_ASSERT(self);
+
+  return self->learning_rate;
+}
+
+
+
+
+void BackpropTrainer_SetLearningRate(struct BackpropTrainer* self, BACKPROP_FLOAT_T value)
+{
+  BACKPROP_ASSERT(self);
+
+  self->learning_rate = value;
+}
+
+
+
+
+BACKPROP_FLOAT_T BackpropTrainer_GetMutationRate(const struct BackpropTrainer* self)
+{
+  BACKPROP_ASSERT(self);
+
+  return self->mutation_rate;
+}
+
+
+
+
+void BackpropTrainer_SetMutationRate(struct BackpropTrainer* self, BACKPROP_FLOAT_T value)
+{
+  BACKPROP_ASSERT(self);
+
+  self->mutation_rate = value;
+}
+
+
+
+
+BACKPROP_FLOAT_T BackpropTrainer_GetMomentumRate(const struct BackpropTrainer* self)
+{
+  BACKPROP_ASSERT(self);
+
+  return self->momentum_rate;
+}
+
+
+
+
+void BackpropTrainer_SetMomentumRate(struct BackpropTrainer* self, BACKPROP_FLOAT_T value)
+{
+  BACKPROP_ASSERT(self);
+
+  self->momentum_rate = value;
+}
+
+
+
+
+BACKPROP_SIZE_T BackpropTrainer_GetMaxReps(const struct BackpropTrainer* self)
+{
+  BACKPROP_ASSERT(self);
+
+  return self->max_reps;
+}
+
+
+
+
+void BackpropTrainer_SetMaxReps(struct BackpropTrainer* self, BACKPROP_SIZE_T value)
+{
+  BACKPROP_ASSERT(self);
+
+  self->max_reps = value;
+}
+
+
+
+
+BACKPROP_SIZE_T BackpropTrainer_GetMaxBatchSets(const struct BackpropTrainer* self)
+{
+  BACKPROP_ASSERT(self);
+
+  return self->max_batch_sets;
+}
+
+
+
+
+void BackpropTrainer_SetMaxBatchSets(struct BackpropTrainer* self, BACKPROP_SIZE_T value)
+{
+  BACKPROP_ASSERT(self);
+
+  self->max_batch_sets = value;
+}
+
+
+
+
+BACKPROP_SIZE_T BackpropTrainer_GetMaxBatches(const struct BackpropTrainer* self)
+{
+  BACKPROP_ASSERT(self);
+
+  return self->max_batches;
+}
+
+
+
+
+void BackpropTrainer_SetMaxBatches(struct BackpropTrainer* self, BACKPROP_SIZE_T value)
+{
+  BACKPROP_ASSERT(self);
+
+  self->max_batches = value;
+}
+
+
+
+
+BACKPROP_SIZE_T BackpropTrainer_GetMaxStagnateSets(const struct BackpropTrainer* self)
+{
+  BACKPROP_ASSERT(self);
+
+  return self->max_stagnate_sets;
+}
+
+
+
+
+void BackpropTrainer_SetMaxStagnateSets(struct BackpropTrainer* self, BACKPROP_SIZE_T value)
+{
+  BACKPROP_ASSERT(self);
+
+  self->max_stagnate_sets = value;
+}
+
+
+
+
+BACKPROP_SIZE_T BackpropTrainer_GetMaxStagnateBatches(const struct BackpropTrainer* self)
+{
+  BACKPROP_ASSERT(self);
+
+  return self->max_stagnate_batches;
+}
+
+
+
+
+void BackpropTrainer_SetMaxStagnateBatches(struct BackpropTrainer* self, BACKPROP_SIZE_T value)
+{
+  BACKPROP_ASSERT(self);
+
+  self->max_stagnate_batches = value;
+}
+
+
+
+
+BACKPROP_FLOAT_T BackpropTrainer_GetMinSetWeightCorrectionLimit(const struct BackpropTrainer* self)
+{
+  BACKPROP_ASSERT(self);
+
+  return self->min_set_weight_correction_limit;
+}
+
+
+
+
+void BackpropTrainer_SetMinSetWeightCorrectionLimit(struct BackpropTrainer* self, BACKPROP_FLOAT_T value)
+{
+  BACKPROP_ASSERT(self);
+
+  self->min_set_weight_correction_limit = value;
+}
+
+
+
+
+BACKPROP_FLOAT_T BackpropTrainer_GetMinBatchWeightCorrectionLimit(const struct BackpropTrainer* self)
+{
+  BACKPROP_ASSERT(self);
+
+  return self->min_batch_weight_correction_limit;
+}
+
+
+
+
+void BackpropTrainer_SetMinBatchWeightCorrectionLimit(struct BackpropTrainer* self, BACKPROP_FLOAT_T value)
+{
+  BACKPROP_ASSERT(self);
+
+  self->min_batch_weight_correction_limit = value;
+}
+
+
+
+
+BACKPROP_FLOAT_T BackpropTrainer_GetTrainingRatio(const struct BackpropTrainer* self)
+{
+  BACKPROP_ASSERT(self);
+
+  return self->training_ratio;
+}
+
+
+
+
+void BackpropTrainer_SetTrainingRatio(struct BackpropTrainer* self, BACKPROP_FLOAT_T value)
+{
+  BACKPROP_ASSERT(self);
+
+  self->training_ratio = value;
+}
+
+
+
+
+BACKPROP_FLOAT_T BackpropTrainer_GetBatchPruneThreshold(const struct BackpropTrainer* self)
+{
+  BACKPROP_ASSERT(self);
+
+  return self->batch_prune_threshold;
+}
+
+
+
+
+void BackpropTrainer_SetBatchPruneThreshold(struct BackpropTrainer* self, BACKPROP_FLOAT_T value)
+{
+  BACKPROP_ASSERT(self);
+
+  self->batch_prune_threshold = value;
+}
+
+
+
+
+BACKPROP_FLOAT_T BackpropTrainer_GetStagnateTolerance(const struct BackpropTrainer* self)
+{
+  BACKPROP_ASSERT(self);
+
+  return self->stagnate_tolerance;
+}
+
+
+
+
+void BackpropTrainer_SetStagnateTolerance(struct BackpropTrainer* self, BACKPROP_FLOAT_T value)
+{
+  BACKPROP_ASSERT(self);
+
+  self->stagnate_tolerance = value;
+}
+
+
+
+
+BACKPROP_FLOAT_T BackpropTrainer_GetBatchPruneRate(const struct BackpropTrainer* self)
+{
+  BACKPROP_ASSERT(self);
+
+  return self->batch_prune_rate;
+}
+
+
+
+
+void BackpropTrainer_SetBatchPruneRate(struct BackpropTrainer* self, BACKPROP_FLOAT_T value)
+{
+  BACKPROP_ASSERT(self);
+
+  self->batch_prune_rate = value;
 }
 
 

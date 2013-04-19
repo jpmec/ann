@@ -2,9 +2,9 @@
 require 'mkmf'
 
 # Give it a name
-extension_name = 'cbackproprb'
+extension_name = 'backproprb'
 
-$CPPFLAGS += " -std=c99"
+$CFLAGS += " -std=c99"
 
 # The destination
 dir_config(extension_name)

@@ -432,6 +432,11 @@ BACKPROP_SIZE_T BackpropNetwork_GetYSize(const struct BackpropNetwork* self);
 const struct BackpropLayersArray* BackpropNetwork_GetLayers(const struct BackpropNetwork* self);
 
 
+/** Get number of network layers.
+ */
+BACKPROP_SIZE_T BackpropNetwork_GetLayersCount(const struct BackpropNetwork* self);
+
+
 /** Get the amount of jitter that is applied to the input for the network is activated.
  */
 BACKPROP_FLOAT_T BackpropNetwork_GetJitter(const struct BackpropNetwork* self);
@@ -631,6 +636,7 @@ typedef struct BackpropTrainingStats
 
 
 struct BackpropTrainer;
+typedef struct BackpropTrainer BackpropTrainer_t;
 
 
 typedef struct BackpropTrainerEvents
@@ -725,6 +731,100 @@ void BackpropTrainer_Free(struct BackpropTrainer* network);
 /** Set the default values for a BackpropTrainer.
  */
 void BackpropTrainer_SetToDefault(struct BackpropTrainer* self);
+
+
+BACKPROP_FLOAT_T BackpropTrainer_GetErrorTolerance(const struct BackpropTrainer* self);
+
+
+void BackpropTrainer_SetErrorTolerance(struct BackpropTrainer* self, BACKPROP_FLOAT_T value);
+
+
+BACKPROP_FLOAT_T BackpropTrainer_GetLearningRate(const struct BackpropTrainer* self);
+
+
+void BackpropTrainer_SetLearningRate(struct BackpropTrainer* self, BACKPROP_FLOAT_T value);
+
+
+BACKPROP_FLOAT_T BackpropTrainer_GetMutationRate(const struct BackpropTrainer* self);
+
+
+void BackpropTrainer_SetMutationRate(struct BackpropTrainer* self, BACKPROP_FLOAT_T value);
+
+
+BACKPROP_FLOAT_T BackpropTrainer_GetMomentumRate(const struct BackpropTrainer* self);
+
+
+void BackpropTrainer_SetMomentumRate(struct BackpropTrainer* self, BACKPROP_FLOAT_T value);
+
+
+BACKPROP_SIZE_T BackpropTrainer_GetMaxReps(const struct BackpropTrainer* self);
+
+
+void BackpropTrainer_SetMaxReps(struct BackpropTrainer* self, BACKPROP_SIZE_T value);
+
+
+BACKPROP_FLOAT_T BackpropTrainer_GetStagnateTolerance(const struct BackpropTrainer* self);
+
+
+void BackpropTrainer_SetStagnateTolerance(struct BackpropTrainer* self, BACKPROP_FLOAT_T value);
+
+
+BACKPROP_SIZE_T BackpropTrainer_GetMaxBatchSets(const struct BackpropTrainer* self);
+
+
+void BackpropTrainer_SetMaxBatchSets(struct BackpropTrainer* self, BACKPROP_SIZE_T value);
+
+
+BACKPROP_SIZE_T BackpropTrainer_GetMaxBatches(const struct BackpropTrainer* self);
+
+
+void BackpropTrainer_SetMaxBatches(struct BackpropTrainer* self, BACKPROP_SIZE_T value);
+
+
+BACKPROP_SIZE_T BackpropTrainer_GetMaxStagnateSets(const struct BackpropTrainer* self);
+
+
+void BackpropTrainer_SetMaxStagnateSets(struct BackpropTrainer* self, BACKPROP_SIZE_T value);
+
+
+BACKPROP_SIZE_T BackpropTrainer_GetMaxStagnateBatches(const struct BackpropTrainer* self);
+
+
+void BackpropTrainer_SetMaxStagnateBatches(struct BackpropTrainer* self, BACKPROP_SIZE_T value);
+
+
+BACKPROP_FLOAT_T BackpropTrainer_GetMinSetWeightCorrectionLimit(const struct BackpropTrainer* self);
+
+
+void BackpropTrainer_SetMinSetWeightCorrectionLimit(struct BackpropTrainer* self, BACKPROP_FLOAT_T value);
+
+
+BACKPROP_FLOAT_T BackpropTrainer_GetMinBatchWeightCorrectionLimit(const struct BackpropTrainer* self);
+
+
+void BackpropTrainer_SetMinBatchWeightCorrectionLimit(struct BackpropTrainer* self, BACKPROP_FLOAT_T value);
+
+
+BACKPROP_FLOAT_T BackpropTrainer_GetTrainingRatio(const struct BackpropTrainer* self);
+
+
+void BackpropTrainer_SetTrainingRatio(struct BackpropTrainer* self, BACKPROP_FLOAT_T value);
+
+
+BACKPROP_FLOAT_T BackpropTrainer_GetBatchPruneThreshold(const struct BackpropTrainer* self);
+
+
+void BackpropTrainer_SetBatchPruneThreshold(struct BackpropTrainer* self, BACKPROP_FLOAT_T value);
+
+
+/** Get the batch prune rate.
+ */
+BACKPROP_FLOAT_T BackpropTrainer_GetBatchPruneRate(const struct BackpropTrainer* self);
+
+
+/** Set the batch prune rate.
+ */
+void BackpropTrainer_SetBatchPruneRate(struct BackpropTrainer* self, BACKPROP_FLOAT_T value);
 
 
 /** Exercise a network with a given training set and return the total error for the training set.
