@@ -3,8 +3,7 @@
 require 'test/unit'
 
 require 'pp'
-require 'cbackproprb'
-require './backproprb'
+require 'backproprb'
 require 'json'
 
 

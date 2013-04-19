@@ -1,0 +1,13 @@
+training_set: {
+dimensions: {count: 3, x_size: 1, y_size: 1}, 
+x:
+[ [0x61]
+, [0x62]
+, [0x63]
+],
+y:
+[ [0x78]
+, [0x79]
+, [0x7A]
+]
+}
