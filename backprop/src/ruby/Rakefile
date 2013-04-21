@@ -1,14 +1,28 @@
+require 'rake/testtask'
+
+
+Rake::TestTask.new do |t|
+  t.libs << "test"
+  t.test_files = FileList['test/test*.rb']
+  t.verbose = true
+end
 
 
 task :clean do
 
   puts `gem uninstall backproprb`
+
+end
+
+
+task :gem => [:clean] do
+
   puts `gem build backproprb.gemspec`
   puts `gem install backproprb-0.0.1.gem`
   
 end
 
 
+task :default => [:gem]
 
 
-task :default => [:clean]

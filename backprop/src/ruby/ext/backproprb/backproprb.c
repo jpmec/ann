@@ -1147,22 +1147,30 @@ static void CBackpropNetwork_free(struct BackpropNetwork* network)
 
 
 
-static VALUE CBackpropNetwork_new(VALUE klass, VALUE x_size, VALUE y_size, VALUE layer_count)
+static VALUE CBackpropNetwork_new(VALUE klass, VALUE args)
 {
   BACKPROP_TRACE(__FUNCTION__);
 
+  VALUE x_size_val = rb_hash_aref(args, rb_str_new2("x_size"));
+  VALUE y_size_val = rb_hash_aref(args, rb_str_new2("y_size"));
+  VALUE layer_count_val = rb_hash_aref(args, rb_str_new2("layer_count"));
+
+  BACKPROP_SIZE_T x_size = NUM2INT(x_size_val);
+  BACKPROP_SIZE_T y_size = NUM2INT(y_size_val);
+  BACKPROP_SIZE_T layer_count = NUM2INT(layer_count_val);
+
   // allocate structure
-  struct BackpropNetwork* network = BackpropNetwork_Malloc( NUM2INT(x_size)
-                                                          , NUM2INT(y_size)
-                                                          , NUM2INT(layer_count)
+  struct BackpropNetwork* network = BackpropNetwork_Malloc( x_size
+                                                          , y_size
+                                                          , layer_count
                                                           , true);
 
   // wrap it in a ruby object, this will cause GC to call free function
   VALUE tdata = Data_Wrap_Struct(klass, 0, CBackpropNetwork_free, network);
 
   // call initialize
-  VALUE argv[3] = {x_size, y_size, layer_count};
-  rb_obj_call_init(tdata, 3, argv);
+  VALUE argv[1] = {args};
+  rb_obj_call_init(tdata, 1, argv);
 
   return tdata;
 }
@@ -2687,8 +2695,8 @@ void Init_cbackproprb()
 
   // Define class CBackproprb::CNetwork
   cBackpropNetwork = rb_define_class_under(cBackproprb, "CNetwork", rb_cObject);
-  rb_define_singleton_method(cBackpropNetwork, "new", CBackpropNetwork_new, 3);
-  rb_define_method(cBackpropNetwork, "initialize", CBackpropNetwork_initialize, 3);
+  rb_define_singleton_method(cBackpropNetwork, "new", CBackpropNetwork_new, 1);
+  rb_define_method(cBackpropNetwork, "initialize", CBackpropNetwork_initialize, 1);
   rb_define_method(cBackpropNetwork, "activate", CBackpropNetwork_activate, 1);
   rb_define_method(cBackpropNetwork, "x", CBackpropNetwork_get_x, 0);
   rb_define_method(cBackpropNetwork, "x_size", CBackpropNetwork_x_size, 0);
