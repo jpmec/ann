@@ -2,6 +2,7 @@
 
 task :clean do
 
+  puts `gem uninstall backproprb`
   puts `gem build backproprb.gemspec`
   puts `gem install backproprb-0.0.1.gem`
   

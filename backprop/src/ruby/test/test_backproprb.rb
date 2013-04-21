@@ -434,17 +434,17 @@ class BackproprbTrainingSetTestCase < Test::Unit::TestCase
   end
 
 
-  def test__to_file__from_file
-    filename = "#{self.class}_#{__method__}.txt"
-
-    sut1 = Backproprb::TrainingSet.new ["a", "b", "c"], ["x", "y", "z"]
-    sut1.to_file filename
-
-    sut2 = Backproprb::TrainingSet.new nil, nil
-    sut2.from_file filename
-
-    assert_equal sut1.to_hash, sut2.to_hash
-  end
+#  def test__to_file__from_file
+#    filename = "#{self.class}_#{__method__}.txt"
+#
+#    sut1 = Backproprb::TrainingSet.new ["a", "b", "c"], ["x", "y", "z"]
+#    sut1.to_file filename
+#
+#    sut2 = Backproprb::TrainingSet.new nil, nil
+#    sut2.from_file filename
+#
+#    assert_equal sut1.to_hash, sut2.to_hash
+#  end
 end
 
 
@@ -751,6 +751,58 @@ class CBackproprbEvolverTestCase  < Test::Unit::TestCase
     assert_equal "1", @network.activate("10")
     assert_equal "0", @network.activate("11")
   end
+
+
+  # Warning this test may take awhile...
+  #def test__evolve_tictactoe
+  #  filename = "#{self.class}_#{__method__}.txt"
+  #
+  #  @network = Backproprb::Network.new(9, 9, 2)
+  #  @network.randomize 2
+  #  @network.from_file filename
+  #
+  #  # evolve
+  #  i = ["         ",
+  #       "x        ",
+  #       " x       ",
+  #       "  x      ",
+  #       "   x     ",
+  #       "    x    ",
+  #       "     x   ",
+  #       "      x  ",
+  #       "       x ",
+  #       "        x"]
+  #  o = ["    x    ",
+  #       "x   o    ",
+  #       " x  o    ",
+  #       "  x o    ",
+  #       "   xo    ",
+  #       "o   x    ",
+  #       "    ox   ",
+  #       "    o x  ",
+  #       "    o  x ",
+  #       "    o   x"]
+  #
+  #  @training_set = Backproprb::TrainingSet.new i, o
+  #  @training_stats = Backproprb::TrainingStats.new
+  #  @exercise_stats = Backproprb::ExerciseStats.new
+  #  @trainer = Backproprb::Trainer.new @network
+  #  @evolution_stats = Backproprb::EvolutionStats.new
+  #  @sut = Backproprb::Evolver.new
+  #  @sut.set_to_default
+  #
+  #  result = @sut.evolve @evolution_stats, @trainer, @training_stats, @exercise_stats, @network, @training_set
+  #
+  #  @network.to_file filename
+  #
+  #  assert_not_nil result
+  #  assert_equal 0, result
+  #
+  #  y = @network.activate("         ")
+  #
+  #  assert_equal 9, y.length
+  #  assert_equal "    x    ", y
+  #end
 
 
 end

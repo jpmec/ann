@@ -800,13 +800,19 @@ static VALUE CBackpropNetwork_activate(VALUE self, VALUE input)
 
   BackpropNetwork_Activate(network);
 
+  const size_t len = BackpropNetwork_GetYSize(network) + 1;
+  char* cstr_out = malloc(len);
+  memset(cstr_out, 0, len);
 
-  // TODO MAKE THIS VARIABLE LENGTH
-  char cstr_out[2] = {0};
+  BackpropNetwork_GetOutputCStr(network, cstr_out, len);
 
-  BackpropNetwork_GetOutputCStr(network, cstr_out, sizeof(cstr_out) - 1);
+  printf("output = %s\n", cstr_out);
 
-  return rb_str_new2(cstr_out);
+  VALUE return_value = rb_str_new2(cstr_out);
+
+  free(cstr_out);
+
+  return return_value;
 }
 
 
