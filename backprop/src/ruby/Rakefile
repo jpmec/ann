@@ -1,28 +1,25 @@
-require 'rake/testtask'
+require 'rake/extensiontask'
 
 
-Rake::TestTask.new do |t|
-  t.libs << "test"
-  t.test_files = FileList['test/test*.rb']
-  t.verbose = true
+spec = Gem::Specification.new do |s|
+  s.name        = 'backproprb'
+  s.version     = '0.0.1'
+  s.date        = '2013-04-20'
+  s.summary     = "Backpropagation Neural Network"
+  s.description = "A gem for training and running Backprop Neural Networks"
+  s.authors     = ["Joshua Petitt"]
+  s.email       = 'joshpetitt@jpmec.com'
+  s.homepage    = 'https://github.com/jpmec/ann'
+  s.files       = Dir.glob('lib/**/*.rb') +
+                  Dir.glob('ext/**/*.{h,c}')
+  s.extensions  = ['ext/backproprb/extconf.rb']
+  s.test_files  = ['test/test_backproprb.rb']
 end
 
 
-task :clean do
-
-  puts `gem uninstall backproprb`
-
+Gem::PackageTask.new(spec) do |pkg|
 end
 
 
-task :gem => [:clean] do
-
-  puts `gem build backproprb.gemspec`
-  puts `gem install backproprb-0.0.1.gem`
-  
-end
-
-
-task :default => [:gem]
-
-
+# feed the ExtensionTask with your spec
+Rake::ExtensionTask.new('backproprb', spec)
