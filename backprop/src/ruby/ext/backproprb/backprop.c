@@ -383,14 +383,17 @@ BACKPROP_SIZE_T Backprop_RandomArrayIndex(size_t lower, size_t upper)
     return lower;
   }
 
-  BACKPROP_SIZE_T value = (BACKPROP_SIZE_T) (Backprop_UniformRandomFloat() * (upper - lower) + lower);
-
-  if (value >= upper)
+  else
   {
-    value = upper - 1;
-  }
+    BACKPROP_SIZE_T value = (BACKPROP_SIZE_T) (Backprop_UniformRandomFloat() * (upper - lower) + lower);
 
-  return value;
+    if (value >= upper)
+    {
+      value = upper - 1;
+    }
+
+    return value;
+  }
 }
 
 
@@ -429,17 +432,18 @@ static void BackpropLayer_DeepCopy(const BackpropLayer_t* self, BackpropLayer_t*
 static void BackpropLayer_Randomize(BackpropLayer_t* self, BACKPROP_FLOAT_T gain)
 {
   BACKPROP_ASSERT(self);
-
-  size_t count = BackpropLayer_WeightCount(self);
-
-  BACKPROP_FLOAT_T* W = self->W;
-
-  do
   {
-      *W += gain * BackpropLayer_RandomWeight();
-      ++W;
+    size_t count = BackpropLayer_WeightCount(self);
 
-  } while (--count);
+    BACKPROP_FLOAT_T* W = self->W;
+
+    do
+    {
+        *W += gain * BackpropLayer_RandomWeight();
+        ++W;
+
+    } while (--count);
+  }
 }
 
 
@@ -448,22 +452,21 @@ static void BackpropLayer_Randomize(BackpropLayer_t* self, BACKPROP_FLOAT_T gain
 static void BackpropLayer_Identity(BackpropLayer_t* self)
 {
   BACKPROP_ASSERT(self);
-
-  size_t count = BackpropLayer_WeightCount(self);
-
-  BACKPROP_FLOAT_T* W = self->W;
-
-  BACKPROP_SIZE_T y = self->y_count;
-  do
   {
-    BACKPROP_SIZE_T x = self->x_count;
+    BACKPROP_FLOAT_T* W = self->W;
+
+    BACKPROP_SIZE_T y = self->y_count;
     do
     {
-      *W = (x == y);
-      ++W;
-    } while (--x);
+      BACKPROP_SIZE_T x = self->x_count;
+      do
+      {
+        *W = (x == y);
+        ++W;
+      } while (--x);
 
-  } while (--y);
+    } while (--y);
+  }
 }
 
 
@@ -472,20 +475,21 @@ static void BackpropLayer_Identity(BackpropLayer_t* self)
 static void BackpropLayer_Prune(BackpropLayer_t* self, BACKPROP_FLOAT_T threshold)
 {
   BACKPROP_ASSERT(self);
-
-  size_t count = BackpropLayer_WeightCount(self);
-
-  BACKPROP_FLOAT_T* W = self->W;
-  do
   {
-    if (threshold > fabs(*W))
+    size_t count = BackpropLayer_WeightCount(self);
+
+    BACKPROP_FLOAT_T* W = self->W;
+    do
     {
-      *W = 0.0;
-    }
+      if (threshold > fabs(*W))
+      {
+        *W = 0.0;
+      }
 
-    ++W;
+      ++W;
 
-  } while (--count);
+    } while (--count);
+  }
 }
 
 
@@ -494,16 +498,17 @@ static void BackpropLayer_Prune(BackpropLayer_t* self, BACKPROP_FLOAT_T threshol
 static void BackpropLayer_Round(BackpropLayer_t* self)
 {
   BACKPROP_ASSERT(self);
-
-  size_t count = BackpropLayer_WeightCount(self);
-
-  BACKPROP_FLOAT_T* W = self->W;
-  do
   {
-    *W = round(*W);
-    ++W;
+    size_t count = BackpropLayer_WeightCount(self);
 
-  } while (--count);
+    BACKPROP_FLOAT_T* W = self->W;
+    do
+    {
+      *W = round(*W);
+      ++W;
+
+    } while (--count);
+  }
 }
 
 
@@ -527,12 +532,13 @@ static void BackpropLayer_Input(BackpropLayer_t* self, const BACKPROP_FLOAT_T* v
   BACKPROP_ASSERT(values);
   BACKPROP_ASSERT(values_size);
   BACKPROP_ASSERT(values_size <= self->x_count);
-
-  BACKPROP_FLOAT_T* x = self->x;
-
-  for(size_t i = 0; i < values_size; ++i)
   {
-      x[i] = values[i];
+    BACKPROP_FLOAT_T* x = self->x;
+
+    for(size_t i = 0; i < values_size; ++i)
+    {
+        x[i] = values[i];
+    }
   }
 }
 
@@ -542,41 +548,42 @@ static void BackpropLayer_Input(BackpropLayer_t* self, const BACKPROP_FLOAT_T* v
 static void BackpropLayer_Activate(BackpropLayer_t* self)
 {
   BACKPROP_ASSERT(self);
-
-  size_t y_count = self->y_count;
-
-  const BACKPROP_FLOAT_T* W = self->W;
-  BACKPROP_FLOAT_T* y = self->y;
-
-  BACKPROP_ASSERT(y_count);
-  BACKPROP_ASSERT(W);
-  BACKPROP_ASSERT(y);
-
-  // for each neuron in layer
-  do
   {
-    // calculate weighted input
-    BACKPROP_FLOAT_T sum = 0;
+    size_t y_count = self->y_count;
 
-    const BACKPROP_FLOAT_T* x = self->x;
-    BACKPROP_ASSERT(x);
+    const BACKPROP_FLOAT_T* W = self->W;
+    BACKPROP_FLOAT_T* y = self->y;
 
-    size_t x_count = self->x_count;
+    BACKPROP_ASSERT(y_count);
+    BACKPROP_ASSERT(W);
+    BACKPROP_ASSERT(y);
+
+    // for each neuron in layer
     do
     {
-      sum += (*W) * (*x);
+      const BACKPROP_FLOAT_T* x = self->x;
+      BACKPROP_ASSERT(x);
+      {
+        // calculate weighted input
+        BACKPROP_FLOAT_T sum = 0;
 
-      ++W;
-      ++x;
+        size_t x_count = self->x_count;
+        do
+        {
+          sum += (*W) * (*x);
 
-    } while (--x_count);
+          ++W;
+          ++x;
 
-    // compute activation function and save output of layer
-    *y = (BACKPROP_FLOAT_T) Backprop_Sigmoid(sum);
+        } while (--x_count);
 
-    ++y;
+        // compute activation function and save output of layer
+        *y = (BACKPROP_FLOAT_T) Backprop_Sigmoid(sum);
 
-  } while (--y_count);
+        ++y;
+      }
+    } while (--y_count);
+  }
 }
 
 
@@ -658,23 +665,25 @@ static BACKPROP_FLOAT_T BackpropLayer_GetWeightsStdDev(const BackpropLayer_t* se
   {
     return 0.0;
   }
-
-  const BACKPROP_FLOAT_T mean = BackpropLayer_GetWeightsMean(self);
-
-  BACKPROP_FLOAT_T ddsum = 0.0;
-  BACKPROP_FLOAT_T* w = self->W;
-
-  BACKPROP_SIZE_T i = count;
-  do
+  else
   {
-    const BACKPROP_FLOAT_T d = *w - mean;
+    const BACKPROP_FLOAT_T mean = BackpropLayer_GetWeightsMean(self);
 
-    ddsum += d*d;
+    BACKPROP_FLOAT_T ddsum = 0.0;
+    BACKPROP_FLOAT_T* w = self->W;
 
-    ++w;
-  } while (--i);
+    BACKPROP_SIZE_T i = count;
+    do
+    {
+      const BACKPROP_FLOAT_T d = *w - mean;
 
-  return sqrt(ddsum / count);
+      ddsum += d*d;
+
+      ++w;
+    } while (--i);
+
+    return sqrt(ddsum / count);
+  }
 }
 
 
@@ -1005,15 +1014,16 @@ void BackpropNetwork_InputCStr(struct BackpropNetwork* self, const char* values)
 {
   BACKPROP_ASSERT(self);
   BACKPROP_ASSERT(values);
-
-  const BACKPROP_SIZE_T values_size = strlen(values);
-
-  if (!values_size)
   {
-    return;
-  }
+    const BACKPROP_SIZE_T values_size = strlen(values);
 
-  BackpropNetwork_Input(self, (const BACKPROP_BYTE_T*) values, values_size);
+    if (!values_size)
+    {
+      return;
+    }
+
+    BackpropNetwork_Input(self, (const BACKPROP_BYTE_T*) values, values_size);
+  }
 }
 
 
@@ -1025,20 +1035,21 @@ BACKPROP_SIZE_T BackpropNetwork_GetOutput(const struct BackpropNetwork* self, BA
   BACKPROP_ASSERT(values);
   BACKPROP_ASSERT(values_size);
   BACKPROP_ASSERT(values_size <= self->y.size);
-
-  const BACKPROP_BYTE_T* data = self->y.data;
-  const BACKPROP_SIZE_T y_size = self->y.size;
-
-  BACKPROP_SIZE_T i = y_size;
-  do
   {
-    *values = *data;
-    ++values;
-    ++data;
+    const BACKPROP_BYTE_T* data = self->y.data;
+    const BACKPROP_SIZE_T y_size = self->y.size;
 
-  } while (--i);
+    BACKPROP_SIZE_T i = y_size;
+    do
+    {
+      *values = *data;
+      ++values;
+      ++data;
 
-  return y_size;
+    } while (--i);
+
+    return y_size;
+  }
 }
 
 
@@ -1064,20 +1075,21 @@ static void BackpropNetwork_ActivateLayers(struct BackpropNetwork* self)
 {
   BACKPROP_ASSERT(self);
   BACKPROP_ASSERT(self->layers.count > 0);
-
-  // activate all layers except last
-  const size_t layers_count = self->layers.count - 1;
-
-  for(size_t i=0; i < layers_count; ++i)
   {
-    BackpropLayer_t* layer = &self->layers.data[i];
+    // activate all layers except last
+    const size_t layers_count = self->layers.count - 1;
 
-    BackpropLayer_Activate(layer);
-    BackpropLayer_Input(&self->layers.data[i + 1], layer->y, layer->y_count);
+    for(size_t i=0; i < layers_count; ++i)
+    {
+      BackpropLayer_t* layer = &self->layers.data[i];
+
+      BackpropLayer_Activate(layer);
+      BackpropLayer_Input(&self->layers.data[i + 1], layer->y, layer->y_count);
+    }
+
+    // activate the last layer
+    BackpropLayer_Activate(&self->layers.data[layers_count]);
   }
-
-  // activate the last layer
-  BackpropLayer_Activate(&self->layers.data[layers_count]);
 }
 
 
@@ -1125,35 +1137,35 @@ const BackpropLayer_t* BackpropNetwork_GetConstLastLayer(const struct BackpropNe
 static void BackpropNetwork_LastLayerToOutput(struct BackpropNetwork* self)
 {
   BACKPROP_ASSERT(self);
-
-  const BackpropLayer_t* last_layer = BackpropNetwork_GetConstLastLayer(self);
-
-  BACKPROP_ASSERT(last_layer);
-
-  // Input each bit value
-  BACKPROP_FLOAT_T* y = last_layer->y;
-
-  BACKPROP_ASSERT((self->y.size * CHAR_BIT) == last_layer->y_count);
-
-  for (size_t i = 0; i < self->y.size; ++i)
   {
-    // convert bits to float
-    BACKPROP_BYTE_T bits = 0;
-    BACKPROP_SIZE_T bit_shift = 0;
-
-    size_t b = CHAR_BIT;
-    do
+    const BackpropLayer_t* last_layer = BackpropNetwork_GetConstLastLayer(self);
+    BACKPROP_ASSERT(last_layer);
     {
-      // set value to 1 if greater than 0.5, otherwise set to 0
-      const BACKPROP_BYTE_T bit = (*y) > 0.5;
-      bits |= (bit << bit_shift);
+      // Input each bit value
+      BACKPROP_FLOAT_T* y = last_layer->y;
+      BACKPROP_ASSERT((self->y.size * CHAR_BIT) == last_layer->y_count);
 
-      ++bit_shift;
-      ++y;
+      for (size_t i = 0; i < self->y.size; ++i)
+      {
+        // convert bits to float
+        BACKPROP_BYTE_T bits = 0;
+        BACKPROP_SIZE_T bit_shift = 0;
 
-    } while (--b);
+        size_t b = CHAR_BIT;
+        do
+        {
+          // set value to 1 if greater than 0.5, otherwise set to 0
+          const BACKPROP_BYTE_T bit = (*y) > 0.5;
+          bits |= (bit << bit_shift);
 
-    self->y.data[i] = bits;
+          ++bit_shift;
+          ++y;
+
+        } while (--b);
+
+        self->y.data[i] = bits;
+      }
+    }
   }
 }
 
@@ -1476,40 +1488,38 @@ BACKPROP_FLOAT_T BackpropLearningAccelerator_Accelerate(BackpropLearningAccelera
 {
   BACKPROP_ASSERT(self);
   BACKPROP_ASSERT(self->min_learning_rate <= self->max_learning_rate);
-
-  const BACKPROP_FLOAT_T max_learning_rate = self->max_learning_rate;
-  BACKPROP_FLOAT_T min_learning_rate = self->min_learning_rate;
-
-  if (min_learning_rate > max_learning_rate)
   {
-    min_learning_rate = max_learning_rate;
-  }
+    const BACKPROP_FLOAT_T max_learning_rate = self->max_learning_rate;
+    BACKPROP_FLOAT_T min_learning_rate = self->min_learning_rate;
+    BACKPROP_FLOAT_T acceleration = self->acceleration;
+    const BACKPROP_FLOAT_T error_diff = error_now - error_prev;
 
-  BACKPROP_FLOAT_T acceleration = self->acceleration;
+    if (min_learning_rate > max_learning_rate)
+    {
+      min_learning_rate = max_learning_rate;
+    }
 
-  const BACKPROP_FLOAT_T error_diff = error_now - error_prev;
-
-  if (error_diff > 0) // more error is bad
-  {
-    learning_rate = min_learning_rate;
-    acceleration = 0;
-  }
-  else // less error is good
-  {
-    if (learning_rate < min_learning_rate)
+    if (error_diff > 0) // more error is bad
     {
       learning_rate = min_learning_rate;
       acceleration = 0;
     }
-    else if (learning_rate > max_learning_rate)
+    else // less error is good
     {
-      learning_rate = max_learning_rate;
-      acceleration = 0;
+      if (learning_rate < min_learning_rate)
+      {
+        learning_rate = min_learning_rate;
+        acceleration = 0;
+      }
+      else if (learning_rate > max_learning_rate)
+      {
+        learning_rate = max_learning_rate;
+        acceleration = 0;
+      }
     }
+
+    return learning_rate + acceleration;
   }
-
-
-  return learning_rate + acceleration;
 }
 
 
@@ -1591,20 +1601,21 @@ static BACKPROP_FLOAT_T BackpropTrainer_ComputeError(const struct BackpropNetwor
   BACKPROP_ASSERT(yd);
   BACKPROP_ASSERT(yd_size);
   BACKPROP_ASSERT(yd_size == network->y.size);
-
-  BACKPROP_BYTE_T* y = network->y.data;
-
-  BACKPROP_FLOAT_T error = 0;
-  do
   {
-    error += BackpropTrainer_ComputeByteError(*y, *yd);
+    BACKPROP_BYTE_T* y = network->y.data;
 
-    ++y;
-    ++yd;
+    BACKPROP_FLOAT_T error = 0;
+    do
+    {
+      error += BackpropTrainer_ComputeByteError(*y, *yd);
 
-  } while (--yd_size);
+      ++y;
+      ++yd;
 
-  return error;
+    } while (--yd_size);
+
+    return error;
+  }
 }
 
 
@@ -1979,47 +1990,50 @@ BACKPROP_FLOAT_T BackpropTrainer_ExerciseConst(BackpropTrainer_t* trainer, Backp
   BACKPROP_ASSERT(stats);
   BACKPROP_ASSERT(network);
   BACKPROP_ASSERT(training_set);
-
-  memset(stats, 0, sizeof(BackpropExerciseStats_t));
-
-  const long int clock_start = clock();
-
-  BACKPROP_FLOAT_T error = 0;
-
-  const BACKPROP_BYTE_T* x = training_set->x;
-  const BACKPROP_BYTE_T* y = training_set->y;
-
-  const size_t count = training_set->dims.count;
-  for(size_t i = 0; i < count; ++i)
   {
-    BackpropNetwork_Input(network, x, training_set->dims.x_size);
+    const long int clock_start = clock();
 
-    if (trainer->events.AfterInput)
+    BACKPROP_FLOAT_T error = 0;
+
+    const BACKPROP_BYTE_T* x = training_set->x;
+    const BACKPROP_BYTE_T* y = training_set->y;
+
+    const size_t count = training_set->dims.count;
+
+    memset(stats, 0, sizeof(BackpropExerciseStats_t));
+
+    for(size_t i = 0; i < count; ++i)
     {
-      trainer->events.AfterInput(network);
+      BackpropNetwork_Input(network, x, training_set->dims.x_size);
+
+      if (trainer->events.AfterInput)
+      {
+        trainer->events.AfterInput(network);
+      }
+
+      BackpropNetwork_Activate(network);
+
+      if (trainer->events.AfterActivate)
+      {
+        trainer->events.AfterActivate(network);
+      }
+
+      error += BackpropTrainer_ComputeError(network, y, training_set->dims.y_size);
+
+      x += training_set->dims.x_size;
+      y += training_set->dims.y_size;
+
+      ++(stats->activate_count);
     }
 
-    BackpropNetwork_Activate(network);
-
-    if (trainer->events.AfterActivate)
     {
-      trainer->events.AfterActivate(network);
+      const long int clock_stop = clock();
+      stats->exercise_clock_ticks += (clock_stop - clock_start);
     }
 
-    error += BackpropTrainer_ComputeError(network, y, training_set->dims.y_size);
-
-    x += training_set->dims.x_size;
-    y += training_set->dims.y_size;
-
-    ++(stats->activate_count);
+    stats->error += error;
+    return error;
   }
-
-  const long int clock_stop = clock();
-
-  stats->exercise_clock_ticks += (clock_stop - clock_start);
-  stats->error += error;
-
-  return error;
 }
 
 
@@ -2031,14 +2045,15 @@ BACKPROP_FLOAT_T BackpropTrainer_Exercise(BackpropTrainer_t* trainer, BackpropEx
   BACKPROP_ASSERT(stats);
   BACKPROP_ASSERT(network);
   BACKPROP_ASSERT(training_set);
+  {
+    BackpropConstTrainingSet_t const_training_set;
+    const_training_set.dims = training_set->dims;
 
-  BackpropConstTrainingSet_t const_training_set;
-  const_training_set.dims = training_set->dims;
+    const_training_set.x = training_set->x;
+    const_training_set.y = training_set->y;
 
-  const_training_set.x = training_set->x;
-  const_training_set.y = training_set->y;
-
-  return BackpropTrainer_ExerciseConst(trainer, stats, network, &const_training_set);
+    return BackpropTrainer_ExerciseConst(trainer, stats, network, &const_training_set);
+  }
 }
 
 
@@ -2056,165 +2071,174 @@ static BACKPROP_FLOAT_T BackpropTrainer_TeachPair( BackpropTrainer_t* trainer, B
   BACKPROP_ASSERT(y_desired);
   BACKPROP_ASSERT(y_desired_size);
   BACKPROP_ASSERT(network->layers.count > 1);
-
-  if (trainer->events.BeforeTeachPair)
   {
-    trainer->events.BeforeTeachPair(trainer, stats, network, x, x_size, y_desired, y_desired_size);
-  }
+    BACKPROP_FLOAT_T error = 0;
+    BACKPROP_FLOAT_T weight_correction_total = 0;
 
-  BackpropNetwork_Input(network, x, x_size);
-
-  if (trainer->events.AfterInput)
-  {
-    trainer->events.AfterInput(network);
-  }
-
-  BackpropNetwork_Activate(network);
-
-  if (trainer->events.AfterActivate)
-  {
-    trainer->events.AfterActivate(network);
-  }
-
-  BACKPROP_FLOAT_T error = BackpropTrainer_ComputeError(network, y_desired, y_desired_size);
-
-  if (error < trainer->error_tolerance)
-  {
-    return error;
-  }
-
-  BACKPROP_FLOAT_T weight_correction_total = 0;
-
-  // update the output layer
-  BackpropLayer_t* layer = BackpropNetwork_GetLastLayer(network);
-
-  BACKPROP_FLOAT_T* W = layer->W;
-  BACKPROP_FLOAT_T* g = layer->g;
-  BACKPROP_FLOAT_T* y = layer->y;
-  const BACKPROP_BYTE_T* yd = y_desired;
-
-//  BACKPROP_FLOAT_T* W_prev = trainer->W_prev[network->layers.count - 1];
-
-  size_t size = y_desired_size;
-  do
-  {
-    size_t yd_bit = 1;
-
-    size_t b = CHAR_BIT;
-    do
+    if (trainer->events.BeforeTeachPair)
     {
-      const BACKPROP_FLOAT_T yd_bit_value = 0 < ((*yd) & yd_bit);
-      const BACKPROP_FLOAT_T output_error = (yd_bit_value - (*y));
-      const BACKPROP_FLOAT_T local_gradient = (*y) * (1 - (*y));
+      trainer->events.BeforeTeachPair(trainer, stats, network, x, x_size, y_desired, y_desired_size);
+    }
 
-      *g = local_gradient * output_error;
+    BackpropNetwork_Input(network, x, x_size);
 
-      // update the layer weights
-      const BACKPROP_FLOAT_T correction_strength = (trainer->learning_rate) * (*g);
-      for(size_t j = 0; j < layer->x_count; ++j)
-      {
-        BACKPROP_FLOAT_T momentum = 0.0;
-        if (trainer->momentum_rate)
-        {
-          // TODO add momentum
-          //momentum = trainer->momentum_rate * (*W - W_prev);
-        }
-
-        BACKPROP_FLOAT_T mutation = 0.0;
-        if (trainer->mutation_rate)
-        {
-          mutation = trainer->mutation_rate * BackpropLayer_RandomWeight();
-        }
-
-        const BACKPROP_FLOAT_T correction = correction_strength * (layer->x[j]);
-        weight_correction_total += fabs(correction);
-
-        (*W) += correction + momentum + mutation;
-
-//        *W_prev = *W;  // update for next round
-
-        ++W;
-//        ++W_prev;
-      }
-
-      yd_bit <<= 1;
-      ++g;
-      ++y;
-
-    } while (--b);
-
-    ++yd;
-
-  } while(--size);
-
-
-  // compute error and update weights
-  for(size_t k = network->layers.count - 1; k > 0; --k)  // for each layer in the network
-  {
-    layer = &network->layers.data[k-1];
-    BackpropLayer_t* pl_next = &network->layers.data[k];
-
-    // calculate weighted gradient of next layer
-    BackpropLayer_WeightedGradient(pl_next, layer->g);
-
-    // calculate the error
-    W = layer->W;
-//    W_prev = trainer->W_prev[k-1];
-
-    for(size_t i = 0; i < layer->y_count; ++i)
+    if (trainer->events.AfterInput)
     {
-      layer->g[i] *= layer->y[i] * (1 - layer->y[i]);  // local gradient
+      trainer->events.AfterInput(network);
+    }
 
-      for(size_t j=0; j < layer->x_count; ++j)
+    BackpropNetwork_Activate(network);
+
+    if (trainer->events.AfterActivate)
+    {
+      trainer->events.AfterActivate(network);
+    }
+
+    error = BackpropTrainer_ComputeError(network, y_desired, y_desired_size);
+
+    if (error < trainer->error_tolerance)
+    {
+      return error;
+    }
+
+   {
+      // update the output layer
+      BackpropLayer_t* layer = BackpropNetwork_GetLastLayer(network);
+
+      BACKPROP_FLOAT_T* W = layer->W;
+      BACKPROP_FLOAT_T* g = layer->g;
+      BACKPROP_FLOAT_T* y = layer->y;
+      const BACKPROP_BYTE_T* yd = y_desired;
+
+    //  BACKPROP_FLOAT_T* W_prev = trainer->W_prev[network->layers.count - 1];
+
+      size_t size = y_desired_size;
+      do
       {
-        BACKPROP_FLOAT_T momentum = 0.0;
-        if (trainer->momentum_rate)
+        size_t yd_bit = 1;
+
+        size_t b = CHAR_BIT;
+        do
         {
-          // TODO add momentum
-          //momentum = trainer->momentum_rate * (*W - W_prev);
-        }
+          const BACKPROP_FLOAT_T yd_bit_value = 0 < ((*yd) & yd_bit);
+          const BACKPROP_FLOAT_T output_error = (yd_bit_value - (*y));
+          const BACKPROP_FLOAT_T local_gradient = (*y) * (1 - (*y));
+          const BACKPROP_FLOAT_T local_gradient_output_error = local_gradient * output_error;
+          const BACKPROP_FLOAT_T correction_strength = (trainer->learning_rate) * local_gradient_output_error;
 
-        BACKPROP_FLOAT_T mutation = 0.0;
-        if (trainer->mutation_rate)
+          *g = local_gradient_output_error;
+
+          // update the layer weights
+          for(size_t j = 0; j < layer->x_count; ++j)
+          {
+            BACKPROP_FLOAT_T momentum = 0.0;
+            BACKPROP_FLOAT_T mutation = 0.0;
+
+            if (trainer->momentum_rate)
+            {
+              // TODO add momentum
+              //momentum = trainer->momentum_rate * (*W - W_prev);
+            }
+
+            if (trainer->mutation_rate)
+            {
+              mutation = trainer->mutation_rate * BackpropLayer_RandomWeight();
+            }
+
+            {
+              const BACKPROP_FLOAT_T correction = correction_strength * (layer->x[j]);
+              weight_correction_total += fabs(correction);
+
+              (*W) += correction + momentum + mutation;
+            }
+
+    //        *W_prev = *W;  // update for next round
+
+            ++W;
+    //        ++W_prev;
+          }
+
+          yd_bit <<= 1;
+          ++g;
+          ++y;
+
+        } while (--b);
+
+        ++yd;
+
+      } while(--size);
+
+
+      // compute error and update weights
+      for(size_t k = network->layers.count - 1; k > 0; --k)  // for each layer in the network
+      {
+        BackpropLayer_t* pl_next = &network->layers.data[k];
+        layer = &network->layers.data[k-1];
+
+        // calculate weighted gradient of next layer
+        BackpropLayer_WeightedGradient(pl_next, layer->g);
+
+        // calculate the error
+        W = layer->W;
+    //    W_prev = trainer->W_prev[k-1];
+
+        for(size_t i = 0; i < layer->y_count; ++i)
         {
-          mutation = trainer->mutation_rate * BackpropLayer_RandomWeight();
+          layer->g[i] *= layer->y[i] * (1 - layer->y[i]);  // local gradient
+
+          for(size_t j=0; j < layer->x_count; ++j)
+          {
+            BACKPROP_FLOAT_T momentum = 0.0;
+            BACKPROP_FLOAT_T mutation = 0.0;
+
+            if (trainer->momentum_rate)
+            {
+              // TODO add momentum
+              //momentum = trainer->momentum_rate * (*W - W_prev);
+            }
+
+            if (trainer->mutation_rate)
+            {
+              mutation = trainer->mutation_rate * BackpropLayer_RandomWeight();
+            }
+
+            //      learning rate *   gradient    *   signal
+            {
+              const BACKPROP_FLOAT_T correction = (trainer->learning_rate) * (layer->g[i]) * (layer->x[j]);
+              weight_correction_total += fabs(correction);
+              (*W) += correction + momentum + mutation;
+            }
+
+    //        *W_prev = *W; // update for next round
+
+            ++W;
+    //        ++W_prev;
+          }
         }
-
-        //      learning rate *   gradient    *   signal
-        const BACKPROP_FLOAT_T correction = (trainer->learning_rate) * (layer->g[i]) * (layer->x[j]);
-        weight_correction_total += fabs(correction);
-
-        (*W) += correction + momentum + mutation;
-
-//        *W_prev = *W; // update for next round
-
-        ++W;
-//        ++W_prev;
       }
     }
+    // re-activate the network and compute the new error
+    BackpropNetwork_Activate(network);
+
+    if (trainer->events.AfterActivate)
+    {
+      trainer->events.AfterActivate(network);
+    }
+
+    error = BackpropTrainer_ComputeError(network, y_desired, y_desired_size);
+
+    if (trainer->events.AfterTeachPair)
+    {
+      trainer->events.AfterTeachPair(trainer, stats, network, x, x_size, y_desired, y_desired_size, network->y.data, network->y.size, error, weight_correction_total);
+    }
+
+    stats->batch_weight_correction_total += weight_correction_total;
+    stats->set_weight_correction_total += weight_correction_total;
+
+    ++stats->teach_total;
+
+    return error;
   }
-
-  // re-activate the network and compute the new error
-  BackpropNetwork_Activate(network);
-
-  if (trainer->events.AfterActivate)
-  {
-    trainer->events.AfterActivate(network);
-  }
-
-  error = BackpropTrainer_ComputeError(network, y_desired, y_desired_size);
-
-  if (trainer->events.AfterTeachPair)
-  {
-    trainer->events.AfterTeachPair(trainer, stats, network, x, x_size, y_desired, y_desired_size, network->y.data, network->y.size, error, weight_correction_total);
-  }
-
-  stats->batch_weight_correction_total += weight_correction_total;
-  stats->set_weight_correction_total += weight_correction_total;
-
-  ++stats->teach_total;
-
-  return error;
 }
 
 
@@ -2233,30 +2257,32 @@ BACKPROP_FLOAT_T BackpropTrainer_TrainPair( BackpropTrainer_t* trainer
   BACKPROP_ASSERT(x_size);
   BACKPROP_ASSERT(y_desired);
   BACKPROP_ASSERT(y_desired_size);
-
-  if (trainer->events.BeforeTrainPair)
   {
-    trainer->events.BeforeTrainPair(trainer, stats, network, x, x_size, y_desired, y_desired_size);
+    const BACKPROP_FLOAT_T tolerance = trainer->error_tolerance;
+    size_t reps = trainer->max_reps;
+    BACKPROP_FLOAT_T error = 0;
+
+    if (trainer->events.BeforeTrainPair)
+    {
+      trainer->events.BeforeTrainPair(trainer, stats, network, x, x_size, y_desired, y_desired_size);
+    }
+
+    do
+    {
+      error = BackpropTrainer_TeachPair(trainer, stats, network, x, x_size, y_desired, y_desired_size);
+
+    } while (--reps && (error > tolerance));
+
+
+    if (trainer->events.AfterTrainPair)
+    {
+      trainer->events.AfterTrainPair(trainer, stats, network, x, x_size, y_desired, y_desired_size, network->y.data, network->y.size, error);
+    }
+
+    ++stats->pair_total;
+
+    return error;
   }
-
-  const BACKPROP_FLOAT_T tolerance = trainer->error_tolerance;
-  size_t reps = trainer->max_reps;
-  BACKPROP_FLOAT_T error = 0;
-  do
-  {
-    error = BackpropTrainer_TeachPair(trainer, stats, network, x, x_size, y_desired, y_desired_size);
-
-  } while (--reps && (error > tolerance));
-
-
-  if (trainer->events.AfterTrainPair)
-  {
-    trainer->events.AfterTrainPair(trainer, stats, network, x, x_size, y_desired, y_desired_size, network->y.data, network->y.size, error);
-  }
-
-  ++stats->pair_total;
-
-  return error;
 }
 
 
@@ -2276,49 +2302,51 @@ static BACKPROP_FLOAT_T BackpropTrainer_TrainSet( BackpropTrainer_t* trainer
     return 0;
   }
 
-  // determine how many training sets to present
-  BACKPROP_SIZE_T training_set_count = (BACKPROP_SIZE_T) (trainer->training_ratio * training_set->dims.count);
-
-  if (training_set_count > training_set->dims.count)
+  else
   {
-    training_set_count = training_set->dims.count - 1;
+    BACKPROP_FLOAT_T error = 0;
+
+    // determine how many training sets to present
+    BACKPROP_SIZE_T training_set_count = (BACKPROP_SIZE_T) (trainer->training_ratio * training_set->dims.count);
+
+    if (training_set_count > training_set->dims.count)
+    {
+      training_set_count = training_set->dims.count - 1;
+    }
+
+    if (training_set_count < 1)
+    {
+      training_set_count = 1;
+    }
+
+    if (trainer->events.BeforeTrainSet)
+    {
+      trainer->events.BeforeTrainSet(trainer, stats, network, training_set);
+    }
+
+    for(size_t i = 0; i < training_set_count; ++i)
+    {
+      // preset a random training set
+      size_t j = Backprop_RandomArrayIndex(0, training_set->dims.count);
+
+      const BACKPROP_BYTE_T* x = training_set->x + j * training_set->dims.x_size;
+      const BACKPROP_BYTE_T* y = training_set->y + j * training_set->dims.y_size;
+
+      const BACKPROP_FLOAT_T pair_error = BackpropTrainer_TrainPair(trainer, stats, network, x, training_set->dims.x_size, y, training_set->dims.y_size);
+
+      error += pair_error;
+    }
+
+    if (trainer->events.AfterTrainSet)
+    {
+      trainer->events.AfterTrainSet(trainer, stats, network, training_set, error);
+    }
+
+    // update stats
+    ++stats->set_total;
+
+    return error;
   }
-
-  if (training_set_count < 1)
-  {
-    training_set_count = 1;
-  }
-
-
-  BACKPROP_FLOAT_T error = 0;
-
-  if (trainer->events.BeforeTrainSet)
-  {
-    trainer->events.BeforeTrainSet(trainer, stats, network, training_set);
-  }
-
-  for(size_t i = 0; i < training_set_count; ++i)
-  {
-    // preset a random training set
-    size_t j = Backprop_RandomArrayIndex(0, training_set->dims.count);
-
-    const BACKPROP_BYTE_T* x = training_set->x + j * training_set->dims.x_size;
-    const BACKPROP_BYTE_T* y = training_set->y + j * training_set->dims.y_size;
-
-    const BACKPROP_FLOAT_T pair_error = BackpropTrainer_TrainPair(trainer, stats, network, x, training_set->dims.x_size, y, training_set->dims.y_size);
-
-    error += pair_error;
-  }
-
-  if (trainer->events.AfterTrainSet)
-  {
-    trainer->events.AfterTrainSet(trainer, stats, network, training_set, error);
-  }
-
-  // update stats
-  ++stats->set_total;
-
-  return error;
 }
 
 
@@ -2333,105 +2361,103 @@ static BACKPROP_FLOAT_T BackpropTrainer_TrainBatch( BackpropTrainer_t* trainer
   BACKPROP_ASSERT(trainer);
   BACKPROP_ASSERT(network);
   BACKPROP_ASSERT(training_set);
-
-
-  if (trainer->events.BeforeTrainBatch)
   {
-    trainer->events.BeforeTrainBatch(trainer, stats, network, training_set);
-  }
+    const BACKPROP_FLOAT_T tolerance = trainer->error_tolerance;
+    const BACKPROP_FLOAT_T stagnate_tolerance = trainer->stagnate_tolerance;
+    const BACKPROP_FLOAT_T max_stagnate_sets = trainer->max_stagnate_sets;
+    const BACKPROP_FLOAT_T max_batch_sets = trainer->max_batch_sets;
 
+    BACKPROP_SIZE_T stagnate_sets = 0;
+    BACKPROP_SIZE_T batch_sets = 0;
 
-  const BACKPROP_FLOAT_T tolerance = trainer->error_tolerance;
-  const BACKPROP_FLOAT_T stagnate_tolerance = trainer->stagnate_tolerance;
-  const BACKPROP_FLOAT_T max_stagnate_sets = trainer->max_stagnate_sets;
-  const BACKPROP_FLOAT_T max_batch_sets = trainer->max_batch_sets;
+    BACKPROP_FLOAT_T error = BackpropTrainer_Exercise(trainer, exercise_stats, network, training_set);
+    BACKPROP_FLOAT_T last_error = error;
 
-  BACKPROP_SIZE_T stagnate_sets = 0;
-  BACKPROP_SIZE_T batch_sets = 0;
-
-
-  BACKPROP_FLOAT_T error = BackpropTrainer_Exercise(trainer, exercise_stats, network, training_set);
-  BACKPROP_FLOAT_T last_error = error;
-
-  do
-  {
-    stats->set_weight_correction_total = 0;
-
-    error = BackpropTrainer_TrainSet(trainer, stats, network, training_set);
-
-    trainer->learning_rate = BackpropLearningAccelerator_Accelerate(&trainer->learning_accelerator, trainer->learning_rate, error, last_error);
-
-    if (error <= tolerance)
+    if (trainer->events.BeforeTrainBatch)
     {
-      error = BackpropTrainer_Exercise(trainer, exercise_stats, network, training_set);
+      trainer->events.BeforeTrainBatch(trainer, stats, network, training_set);
     }
 
-    if (trainer->min_set_weight_correction_limit > stats->set_weight_correction_total)
+    do
     {
-      if (trainer->events.AfterStubbornSet)
+      stats->set_weight_correction_total = 0;
+
+      error = BackpropTrainer_TrainSet(trainer, stats, network, training_set);
+
+      trainer->learning_rate = BackpropLearningAccelerator_Accelerate(&trainer->learning_accelerator, trainer->learning_rate, error, last_error);
+
+      if (error <= tolerance)
       {
-        trainer->events.AfterStubbornSet(trainer, stats, network, training_set, error);
+        error = BackpropTrainer_Exercise(trainer, exercise_stats, network, training_set);
       }
 
-      if ((last_error <= error) || ((last_error - error) < stagnate_tolerance))
+      if (trainer->min_set_weight_correction_limit > stats->set_weight_correction_total)
       {
-        ++stagnate_sets;
-        if (trainer->events.AfterStagnateSet)
+        if (trainer->events.AfterStubbornSet)
         {
-          trainer->events.AfterStagnateSet(trainer, stats, network, training_set, batch_sets, stagnate_sets, error);
+          trainer->events.AfterStubbornSet(trainer, stats, network, training_set, error);
+        }
+
+        if ((last_error <= error) || ((last_error - error) < stagnate_tolerance))
+        {
+          ++stagnate_sets;
+          if (trainer->events.AfterStagnateSet)
+          {
+            trainer->events.AfterStagnateSet(trainer, stats, network, training_set, batch_sets, stagnate_sets, error);
+          }
+        }
+        else
+        {
+          stagnate_sets = 0;
         }
       }
-      else
+
+      if (trainer->events.AfterTrainSet)
       {
-        stagnate_sets = 0;
+        trainer->events.AfterTrainSet(trainer, stats, network, training_set, error);
       }
-    }
 
-    if (trainer->events.AfterTrainSet)
+      last_error = error;
+      ++batch_sets;
+
+
+      if (error <= tolerance)
+      {
+        break;
+      }
+
+      if ((max_batch_sets) && (max_batch_sets <= batch_sets))
+      {
+        break;
+      }
+
+      if (max_stagnate_sets <= stagnate_sets)
+      {
+        break;
+      }
+
+      if (stats->set_weight_correction_total <= trainer->min_set_weight_correction_limit)
+      {
+        break;
+      }
+
+    } while (1);
+
+
+    if ((stagnate_sets >= max_stagnate_sets) && trainer->events.AfterMaxStagnateSets)
     {
-      trainer->events.AfterTrainSet(trainer, stats, network, training_set, error);
+      trainer->events.AfterMaxStagnateSets(trainer, stats, network, training_set, batch_sets, stagnate_sets, error);
     }
 
-    last_error = error;
-    ++batch_sets;
-
-
-    if (error <= tolerance)
+    if (trainer->events.AfterTrainBatch)
     {
-      break;
+      trainer->events.AfterTrainBatch(trainer, stats, network, training_set, batch_sets, error);
     }
 
-    if ((max_batch_sets) && (max_batch_sets <= batch_sets))
-    {
-      break;
-    }
+    ++stats->batches_total;
 
-    if (max_stagnate_sets <= stagnate_sets)
-    {
-      break;
-    }
-
-    if (stats->set_weight_correction_total <= trainer->min_set_weight_correction_limit)
-    {
-      break;
-    }
-
-  } while (1);
-
-
-  if ((stagnate_sets >= max_stagnate_sets) && trainer->events.AfterMaxStagnateSets)
-  {
-    trainer->events.AfterMaxStagnateSets(trainer, stats, network, training_set, batch_sets, stagnate_sets, error);
+    return error;
   }
-
-  if (trainer->events.AfterTrainBatch)
-  {
-    trainer->events.AfterTrainBatch(trainer, stats, network, training_set, batch_sets, error);
-  }
-
-  ++stats->batches_total;
-
-  return error;
 }
 
 
@@ -2447,141 +2473,141 @@ BACKPROP_FLOAT_T BackpropTrainer_Train( BackpropTrainer_t* trainer
   BACKPROP_ASSERT(stats);
   BACKPROP_ASSERT(network);
   BACKPROP_ASSERT(training_set);
-
-  const BACKPROP_FLOAT_T stagnate_tolerance = trainer->stagnate_tolerance;
-  const BACKPROP_FLOAT_T max_stagnate_batches = trainer->max_stagnate_batches;
-  BACKPROP_FLOAT_T stagnate_batches = 0;
-
-  const BACKPROP_SIZE_T max_batch_count = trainer->max_batches;
-  BACKPROP_SIZE_T batch_count = 0;
-
-
-  BACKPROP_FLOAT_T batch_prune_threshold = trainer->batch_prune_rate;
-
-
-  if (trainer->events.BeforeTrain)
   {
-    trainer->events.BeforeTrain(trainer, stats, network, training_set);
-  }
+    const BACKPROP_FLOAT_T stagnate_tolerance = trainer->stagnate_tolerance;
+    const BACKPROP_FLOAT_T max_stagnate_batches = trainer->max_stagnate_batches;
+    BACKPROP_FLOAT_T stagnate_batches = 0;
 
-  const BACKPROP_FLOAT_T tolerance = trainer->error_tolerance;
-  BACKPROP_FLOAT_T error = BackpropTrainer_Exercise(trainer, exercise_stats, network, training_set);
-  BACKPROP_FLOAT_T last_error = error;
+    const BACKPROP_SIZE_T max_batch_count = trainer->max_batches;
+    BACKPROP_SIZE_T batch_count = 0;
 
-  if (error < trainer->error_tolerance)
-  {
-    return error;
-  }
+    BACKPROP_FLOAT_T batch_prune_threshold = trainer->batch_prune_rate;
 
-  long int clock_start = clock();
+    const BACKPROP_FLOAT_T tolerance = trainer->error_tolerance;
+    BACKPROP_FLOAT_T error = BackpropTrainer_Exercise(trainer, exercise_stats, network, training_set);
+    BACKPROP_FLOAT_T last_error = error;
 
-  do
-  {
-    stats->batch_weight_correction_total = 0;
+    long int clock_start = clock();
 
-    error = BackpropTrainer_TrainBatch(trainer, stats, exercise_stats, network, training_set);
+    if (error < trainer->error_tolerance)
+    {
+      return error;
+    }
+
+    if (trainer->events.BeforeTrain)
+    {
+      trainer->events.BeforeTrain(trainer, stats, network, training_set);
+    }
+
+    do
+    {
+      stats->batch_weight_correction_total = 0;
+
+      error = BackpropTrainer_TrainBatch(trainer, stats, exercise_stats, network, training_set);
+
+      if (error > tolerance)
+      {
+        if (trainer->batch_prune_threshold && trainer->batch_prune_rate)
+        {
+          batch_prune_threshold = trainer->batch_prune_rate;
+        }
+      }
+      else
+      {
+        if (trainer->batch_prune_threshold)
+        {
+          BackpropTrainer_Prune(trainer, network, trainer->batch_prune_threshold);
+          batch_prune_threshold += trainer->batch_prune_rate;
+
+          if (batch_prune_threshold > trainer->batch_prune_threshold)
+          {
+            batch_prune_threshold = trainer->batch_prune_threshold;
+          }
+        }
+      }
+
+      error = BackpropTrainer_Exercise(trainer, exercise_stats, network, training_set);
+
+      if (error > tolerance)
+      {
+        if (trainer->min_batch_weight_correction_limit > stats->batch_weight_correction_total)
+        {
+          ++stats->stubborn_batches_total;
+          if (trainer->events.AfterStubbornBatch)
+          {
+            trainer->events.AfterStubbornBatch(trainer, stats, network, training_set, error);
+          }
+
+          if ((last_error <= error) || ((last_error - error) < stagnate_tolerance))
+          {
+            if (trainer->events.AfterStagnateBatch)
+            {
+              trainer->events.AfterStagnateBatch(trainer, stats, network, training_set, stagnate_batches, error);
+            }
+            ++stagnate_batches;
+            ++stats->stagnate_batches_total;
+          }
+        }
+      }
+
+      last_error = error;
+
+      ++batch_count;
+
+      if (error <= tolerance)
+      {
+        break;
+      }
+
+      if ((max_batch_count) && (max_batch_count <= batch_count))
+      {
+        break;
+      }
+
+      if (trainer->batch_prune_threshold <= batch_prune_threshold)
+      {
+        break;
+      }
+
+      if ((max_stagnate_batches) && (max_stagnate_batches <= stagnate_batches))
+      {
+        break;
+      }
+
+    } while (1);
+
+    if ((stagnate_batches >= max_stagnate_batches) && trainer->events.AfterMaxStagnateBatches)
+    {
+      trainer->events.AfterMaxStagnateBatches(trainer, stats, network, training_set, stagnate_batches, error);
+    }
 
     if (error > tolerance)
     {
-      if (trainer->batch_prune_threshold && trainer->batch_prune_rate)
+      if (trainer->events.AfterTrainFailure)
       {
-        batch_prune_threshold = trainer->batch_prune_rate;
+        trainer->events.AfterTrainFailure(trainer, stats, network, training_set, error);
       }
     }
     else
     {
-      if (trainer->batch_prune_threshold)
+      if (trainer->events.AfterTrainSuccess)
       {
-        BackpropTrainer_Prune(trainer, network, trainer->batch_prune_threshold);
-        batch_prune_threshold += trainer->batch_prune_rate;
-
-        if (batch_prune_threshold > trainer->batch_prune_threshold)
-        {
-          batch_prune_threshold = trainer->batch_prune_threshold;
-        }
+        trainer->events.AfterTrainSuccess(trainer, stats, network, training_set, error);
       }
     }
 
-    error = BackpropTrainer_Exercise(trainer, exercise_stats, network, training_set);
-
-    if (error > tolerance)
+    if (trainer->events.AfterTrain)
     {
-      if (trainer->min_batch_weight_correction_limit > stats->batch_weight_correction_total)
-      {
-        ++stats->stubborn_batches_total;
-        if (trainer->events.AfterStubbornBatch)
-        {
-          trainer->events.AfterStubbornBatch(trainer, stats, network, training_set, error);
-        }
-
-        if ((last_error <= error) || ((last_error - error) < stagnate_tolerance))
-        {
-          if (trainer->events.AfterStagnateBatch)
-          {
-            trainer->events.AfterStagnateBatch(trainer, stats, network, training_set, stagnate_batches, error);
-          }
-          ++stagnate_batches;
-          ++stats->stagnate_batches_total;
-        }
-      }
+      trainer->events.AfterTrain(trainer, stats, network, training_set, error);
     }
 
-    last_error = error;
-
-    ++batch_count;
-
-    if (error <= tolerance)
     {
-      break;
+      long int clock_stop = clock();
+      stats->train_clock = clock_stop - clock_start;
     }
 
-    if ((max_batch_count) && (max_batch_count <= batch_count))
-    {
-      break;
-    }
-
-    if (trainer->batch_prune_threshold <= batch_prune_threshold)
-    {
-      break;
-    }
-
-    if ((max_stagnate_batches) && (max_stagnate_batches <= stagnate_batches))
-    {
-      break;
-    }
-
-  } while (1);
-
-  if ((stagnate_batches >= max_stagnate_batches) && trainer->events.AfterMaxStagnateBatches)
-  {
-    trainer->events.AfterMaxStagnateBatches(trainer, stats, network, training_set, stagnate_batches, error);
+    return error;
   }
-
-  if (error > tolerance)
-  {
-    if (trainer->events.AfterTrainFailure)
-    {
-      trainer->events.AfterTrainFailure(trainer, stats, network, training_set, error);
-    }
-  }
-  else
-  {
-    if (trainer->events.AfterTrainSuccess)
-    {
-      trainer->events.AfterTrainSuccess(trainer, stats, network, training_set, error);
-    }
-  }
-
-  if (trainer->events.AfterTrain)
-  {
-    trainer->events.AfterTrain(trainer, stats, network, training_set, error);
-  }
-
-  long int clock_stop = clock();
-
-  stats->train_clock = clock_stop - clock_start;
-
-  return error;
 }
 
 
@@ -2604,22 +2630,23 @@ static struct BackpropNetwork** BackpropNetwork_MallocPool(BACKPROP_SIZE_T x_siz
   BACKPROP_ASSERT(y_size);
   BACKPROP_ASSERT(layers_count);
   BACKPROP_ASSERT(pool_count);
-
-  struct BackpropNetwork** network_pool = Backprop_Malloc(pool_count * sizeof(struct BackpropNetwork*));
-
-  for (size_t i = 0; i < pool_count; ++i)
   {
-    struct BackpropNetwork* new_network = BackpropNetwork_Malloc(x_size, y_size, layers_count, chain_layers);
+    struct BackpropNetwork** network_pool = Backprop_Malloc(pool_count * sizeof(struct BackpropNetwork*));
 
-    if (!new_network)
+    for (size_t i = 0; i < pool_count; ++i)
     {
-      break;
+      struct BackpropNetwork* new_network = BackpropNetwork_Malloc(x_size, y_size, layers_count, chain_layers);
+
+      if (!new_network)
+      {
+        break;
+      }
+
+      network_pool[i] = new_network;
     }
 
-    network_pool[i] = new_network;
+    return network_pool;
   }
-
-  return network_pool;
 }
 
 
@@ -2658,27 +2685,28 @@ static void BackpropEvolver_MateLayers(BackpropEvolver_t* evolver, BackpropLayer
 {
   BACKPROP_ASSERT(beta);
   BACKPROP_ASSERT(alpha);
-
-  BACKPROP_FLOAT_T* W_b = (beta->W);
-  BACKPROP_FLOAT_T* W_a = (alpha->W);
-
-  size_t count = beta->x_count * beta->y_count;
-
-  const BACKPROP_FLOAT_T mate_rate = evolver->mate_rate;
-  const BACKPROP_FLOAT_T one_minus_mate_rate = 1.0 - evolver->mate_rate;
-  do
   {
-    const BACKPROP_FLOAT_T rand_a = BackpropLayer_RandomWeight() * mate_rate;
-    const BACKPROP_FLOAT_T rand_b = BackpropLayer_RandomWeight() * one_minus_mate_rate;
+    BACKPROP_FLOAT_T* W_b = (beta->W);
+    BACKPROP_FLOAT_T* W_a = (alpha->W);
 
-    const BACKPROP_FLOAT_T W_new =  (((*W_a) + rand_a) + ((*W_b) + rand_b)) / 2;
+    size_t count = beta->x_count * beta->y_count;
 
-    (*W_b) = W_new;
+    const BACKPROP_FLOAT_T mate_rate = evolver->mate_rate;
+    const BACKPROP_FLOAT_T one_minus_mate_rate = 1.0 - evolver->mate_rate;
+    do
+    {
+      const BACKPROP_FLOAT_T rand_a = BackpropLayer_RandomWeight() * mate_rate;
+      const BACKPROP_FLOAT_T rand_b = BackpropLayer_RandomWeight() * one_minus_mate_rate;
 
-    ++W_b;
-    ++W_a;
+      const BACKPROP_FLOAT_T W_new =  (((*W_a) + rand_a) + ((*W_b) + rand_b)) / 2;
 
-  } while (--count);
+      (*W_b) = W_new;
+
+      ++W_b;
+      ++W_a;
+
+    } while (--count);
+  }
 }
 
 
@@ -2737,7 +2765,6 @@ BACKPROP_FLOAT_T BackpropEvolver_Evolve(BackpropEvolver_t* evolver, BackpropEvol
   BACKPROP_ASSERT(exercise_stats);
   BACKPROP_ASSERT(network);
   BACKPROP_ASSERT(training_set);
-
   {
     const bool chain_layers = true;
 
@@ -2754,44 +2781,59 @@ BACKPROP_FLOAT_T BackpropEvolver_Evolve(BackpropEvolver_t* evolver, BackpropEvol
     BackpropNetwork_DeepCopy(network, network_pool[0]);
 
     // randomize rest of pool
-    unsigned int seed = evolver->seed;
-    for (size_t i = 1; i < evolver->pool_count; ++i)
     {
-      BackpropNetwork_Randomize(network_pool[i], seed);
-      ++seed;
+      unsigned int seed = evolver->seed;
+      for (size_t i = 1; i < evolver->pool_count; ++i)
+      {
+        BackpropNetwork_Randomize(network_pool[i], seed);
+        ++seed;
+      }
     }
 
-    // get error benchmarks
-    BACKPROP_FLOAT_T error = BackpropTrainer_Exercise(trainer, exercise_stats, network_pool[0], training_set);
-
-    BACKPROP_FLOAT_T best_error = error;
-    struct BackpropNetwork* best = network_pool[0];
-
-    BACKPROP_FLOAT_T worst_error = error;
-    struct BackpropNetwork* worst = network_pool[0];
-
-    // clear out stats
-    *evolution_stats = (BackpropEvolutionStats_t) {0};
-
-    // batch train the network pool
     {
-      BACKPROP_SIZE_T generation_count = 0;
-      while ((error > trainer->error_tolerance) && (generation_count < evolver->max_generations))
+      // get error benchmarks
+      BACKPROP_FLOAT_T error = BackpropTrainer_Exercise(trainer, exercise_stats, network_pool[0], training_set);
+
+      BACKPROP_FLOAT_T best_error = error;
+      struct BackpropNetwork* best = network_pool[0];
+
+      BACKPROP_FLOAT_T worst_error = error;
+      struct BackpropNetwork* worst = network_pool[0];
+
+      // clear out stats
+      *evolution_stats = (BackpropEvolutionStats_t) {0};
+
+      // batch train the network pool
       {
-        if (evolver->BeforeGeneration)
+        BACKPROP_SIZE_T generation_count = 0;
+        while ((error > trainer->error_tolerance) && (generation_count < evolver->max_generations))
         {
-          evolver->BeforeGeneration(evolver, evolution_stats, generation_count);
-        }
-
-        // train all pool members
-        for (size_t i = 1; i < evolver->pool_count; ++i)
-        {
-          error = BackpropTrainer_TrainBatch(trainer, training_stats, exercise_stats, network_pool[i], training_set);
-
-          if (error < best_error)
+          if (evolver->BeforeGeneration)
           {
-            best_error = error;
-            best = network_pool[i];
+            evolver->BeforeGeneration(evolver, evolution_stats, generation_count);
+          }
+
+          // train all pool members
+          for (size_t i = 1; i < evolver->pool_count; ++i)
+          {
+            error = BackpropTrainer_TrainBatch(trainer, training_stats, exercise_stats, network_pool[i], training_set);
+
+            if (error < best_error)
+            {
+              best_error = error;
+              best = network_pool[i];
+            }
+
+            if (error < trainer->error_tolerance)
+            {
+              break;
+            }
+
+            if (error > worst_error)
+            {
+              worst_error = error;
+              worst = network_pool[i];
+            }
           }
 
           if (error < trainer->error_tolerance)
@@ -2799,63 +2841,52 @@ BACKPROP_FLOAT_T BackpropEvolver_Evolve(BackpropEvolver_t* evolver, BackpropEvol
             break;
           }
 
-          if (error > worst_error)
+          // evolve pool members
+          for (size_t i = 0; i < evolver->pool_count; ++i)
           {
-            worst_error = error;
-            worst = network_pool[i];
-          }
-        }
+            struct BackpropNetwork* network = network_pool[i];
 
-        if (error < trainer->error_tolerance)
-        {
-          break;
-        }
+            // do not mate best with self or worst member of pool
+            if ((network == best) || (network == worst))
+            {
+              continue;
+            }
 
-        // evolve pool members
-        for (size_t i = 0; i < evolver->pool_count; ++i)
-        {
-          struct BackpropNetwork* network = network_pool[i];
+            if (evolver->BeforeMateNetworks)
+            {
+              evolver->BeforeMateNetworks(evolver, evolution_stats, network);
+            }
 
-          // do not mate best with self or worst member of pool
-          if ((network == best) || (network == worst))
-          {
-            continue;
-          }
+            BackpropEvolver_MateNetworks(evolver, evolution_stats, network, best);
 
-          if (evolver->BeforeMateNetworks)
-          {
-            evolver->BeforeMateNetworks(evolver, evolution_stats, network);
+            if (evolver->AfterMateNetworks)
+            {
+              evolver->AfterMateNetworks(evolver, evolution_stats, network, best);
+            }
           }
 
-          BackpropEvolver_MateNetworks(evolver, evolution_stats, network, best);
-
-          if (evolver->AfterMateNetworks)
+          if (evolver->AfterGeneration)
           {
-            evolver->AfterMateNetworks(evolver, evolution_stats, network, best);
+            evolver->AfterGeneration(evolver, evolution_stats, generation_count);
           }
-        }
 
-        if (evolver->AfterGeneration)
-        {
-          evolver->AfterGeneration(evolver, evolution_stats, generation_count);
+          ++generation_count;
+          ++evolution_stats->generation_count;
         }
-
-        ++generation_count;
-        ++evolution_stats->generation_count;
       }
+
+      // copy out best network data
+      BackpropNetwork_DeepCopy(best, network);
+
+      // all done
+      BackpropNetwork_FreePool(network_pool, evolver->pool_count);
+
+      {
+        long int clock_stop = clock();
+        evolution_stats->evolve_clock = clock_stop - clock_start;
+      }
+
+      return best_error;
     }
-
-    // copy out best network data
-    BackpropNetwork_DeepCopy(best, network);
-
-    // all done
-    BackpropNetwork_FreePool(network_pool, evolver->pool_count);
-
-    {
-      long int clock_stop = clock();
-      evolution_stats->evolve_clock = clock_stop - clock_start;
-    }
-
-    return best_error;
   }
 }
