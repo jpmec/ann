@@ -63,9 +63,10 @@ static void CBackprop_Free(void* obj)
 VALUE CBackprop_sigmoid(VALUE self, VALUE x)
 {
   BACKPROP_TRACE(__FUNCTION__);
-
-  const BACKPROP_FLOAT_T y = Backprop_Sigmoid(NUM2DBL(x));
-  return rb_float_new(y);
+  {
+    const BACKPROP_FLOAT_T y = Backprop_Sigmoid(NUM2DBL(x));
+    return rb_float_new(y);
+  }
 }
 
 
@@ -74,9 +75,10 @@ VALUE CBackprop_sigmoid(VALUE self, VALUE x)
 VALUE CBackprop_uniform_random_int(VALUE self)
 {
   BACKPROP_TRACE(__FUNCTION__);
-
-  const int i = Backprop_UniformRandomInt();
-  return rb_float_new(i);
+  {
+    const int i = Backprop_UniformRandomInt();
+    return INT2NUM(i);
+  }
 }
 
 
@@ -85,9 +87,10 @@ VALUE CBackprop_uniform_random_int(VALUE self)
 VALUE CBackprop_used(void)
 {
   BACKPROP_TRACE(__FUNCTION__);
-
-  const size_t in_use = Backprop_GetMallocInUse();
-  return INT2NUM(in_use);
+  {
+    const size_t in_use = Backprop_GetMallocInUse();
+    return INT2NUM(in_use);
+  }
 }
 
 
@@ -103,29 +106,36 @@ VALUE CBackprop_used(void)
 
 static VALUE CBackpropLayer_get_W(VALUE self)
 {
-  BackpropLayer_t* layer;
+  BackpropLayer_t* layer = NULL;
+
   Data_Get_Struct(self, BackpropLayer_t, layer);
-
-  VALUE a = rb_ary_new();
-
-  BACKPROP_FLOAT_T* w = layer->W;
-
-  size_t y = layer->y_count;
-  do
+  if (!layer)
   {
-    VALUE row = rb_ary_new();
+    return Qnil;
+  }
 
-    size_t x = layer->x_count;
+  else
+  {
+    VALUE a = rb_ary_new();
+    BACKPROP_FLOAT_T* w = layer->W;
+
+    size_t y = layer->y_count;
     do
     {
-      rb_ary_push(row, rb_float_new(*w));
-      ++w;
-    } while(--x);
+      VALUE row = rb_ary_new();
 
-    rb_ary_push(a, row);
-  } while (--y);
+      size_t x = layer->x_count;
+      do
+      {
+        rb_ary_push(row, rb_float_new(*w));
+        ++w;
+      } while(--x);
 
-  return a;
+      rb_ary_push(a, row);
+    } while (--y);
+
+    return a;
+  }
 }
 
 
@@ -133,24 +143,31 @@ static VALUE CBackpropLayer_get_W(VALUE self)
 
 static VALUE CBackpropLayer_set_W(VALUE self, VALUE vals)
 {
-  BackpropLayer_t* layer;
-  Data_Get_Struct(self, BackpropLayer_t, layer);
-
   const ID f = rb_intern("length");
   VALUE length_val = rb_funcall(vals, f, 0, 0);
   size_t length = NUM2INT(length_val);
 
-  const BACKPROP_SIZE_T W_count = BackpropLayer_GetWeightsCount(layer);
+  BackpropLayer_t* layer = NULL;
+  Data_Get_Struct(self, BackpropLayer_t, layer);
 
-  const long end = (W_count < length) ? W_count : length;
-
-  for (long i = 0; i < end; ++i)
+  if (!layer)
   {
-    VALUE val = rb_ary_entry(vals, i);
-    layer->W[i] = NUM2DBL(val);
+    return Qnil;
   }
+  else
+  {
+    const BACKPROP_SIZE_T W_count = BackpropLayer_GetWeightsCount(layer);
 
-  return self;
+    const long end = (W_count < length) ? W_count : length;
+
+    for (long i = 0; i < end; ++i)
+    {
+      VALUE val = rb_ary_entry(vals, i);
+      layer->W[i] = NUM2DBL(val);
+    }
+
+    return self;
+  }
 }
 
 
@@ -161,18 +178,24 @@ static VALUE CBackpropLayer_get_g(VALUE self)
   BackpropLayer_t* layer;
   Data_Get_Struct(self, BackpropLayer_t, layer);
 
-  VALUE a = rb_ary_new();
-
-  BACKPROP_FLOAT_T* g = layer->g;
-
-  size_t i = layer->y_count;
-  do
+  if (!layer)
   {
-    rb_ary_push(a, rb_float_new(*g));
-    ++g;
-  } while(--i);
+    return Qnil;
+  }
+  else
+  {
+    VALUE a = rb_ary_new();
+    BACKPROP_FLOAT_T* g = layer->g;
 
-  return a;
+    size_t i = layer->y_count;
+    do
+    {
+      rb_ary_push(a, rb_float_new(*g));
+      ++g;
+    } while(--i);
+
+    return a;
+  }
 }
 
 
@@ -183,19 +206,27 @@ static VALUE CBackpropLayer_set_g(VALUE self, VALUE vals)
   BackpropLayer_t* layer;
   Data_Get_Struct(self, BackpropLayer_t, layer);
 
-  const ID f = rb_intern("length");
-  VALUE length_val = rb_funcall(vals, f, 0, 0);
-  size_t length = NUM2INT(length_val);
-
-  const long end = (layer->y_count < length) ? layer->y_count : length;
-
-  for (long i = 0; i < end; ++i)
+  if (!layer)
   {
-    VALUE val = rb_ary_entry(vals, i);
-    layer->g[i] = NUM2DBL(val);
+    return Qnil;
   }
 
-  return self;
+  else
+  {
+    const ID f = rb_intern("length");
+    VALUE length_val = rb_funcall(vals, f, 0, 0);
+    size_t length = NUM2INT(length_val);
+
+    const long end = (layer->y_count < length) ? layer->y_count : length;
+
+    for (long i = 0; i < end; ++i)
+    {
+      VALUE val = rb_ary_entry(vals, i);
+      layer->g[i] = NUM2DBL(val);
+    }
+
+    return self;
+  }
 }
 
 
@@ -206,18 +237,26 @@ static VALUE CBackpropLayer_get_x(VALUE self)
   BackpropLayer_t* layer;
   Data_Get_Struct(self, BackpropLayer_t, layer);
 
-  VALUE a = rb_ary_new();
-
-  BACKPROP_FLOAT_T* x = layer->x;
-
-  size_t i = layer->x_count;
-  do
+  if (!self)
   {
-    rb_ary_push(a, rb_float_new(*x));
-    ++x;
-  } while(--i);
+    return Qnil;
+  }
 
-  return a;
+  else
+  {
+    VALUE a = rb_ary_new();
+
+    BACKPROP_FLOAT_T* x = layer->x;
+
+    size_t i = layer->x_count;
+    do
+    {
+      rb_ary_push(a, rb_float_new(*x));
+      ++x;
+    } while(--i);
+
+    return a;
+  }
 }
 
 
@@ -225,22 +264,28 @@ static VALUE CBackpropLayer_get_x(VALUE self)
 
 static VALUE CBackpropLayer_set_x(VALUE self, VALUE vals)
 {
-  BackpropLayer_t* layer;
-  Data_Get_Struct(self, BackpropLayer_t, layer);
-
   const ID f = rb_intern("length");
   VALUE length_val = rb_funcall(vals, f, 0, 0);
   size_t length = NUM2INT(length_val);
 
-  const long end = (layer->x_count < length) ? layer->x_count : length;
-
-  for (long i = 0; i < end; ++i)
+  BackpropLayer_t* layer = NULL;
+  Data_Get_Struct(self, BackpropLayer_t, layer);
+  if (!layer)
   {
-    VALUE val = rb_ary_entry(vals, i);
-    layer->x[i] = NUM2DBL(val);
+    return Qnil;
   }
+  else
+  {
+    const long end = (layer->x_count < length) ? layer->x_count : length;
 
-  return self;
+    for (long i = 0; i < end; ++i)
+    {
+      VALUE val = rb_ary_entry(vals, i);
+      layer->x[i] = NUM2DBL(val);
+    }
+
+    return self;
+  }
 }
 
 
@@ -1979,33 +2024,33 @@ static VALUE CBackpropTrainer_train( VALUE trainer_val
   BACKPROP_TRACE(__FUNCTION__);
 
   BackpropTrainer_t* trainer = NULL;
-  Data_Get_Struct(trainer_val, BackpropTrainer_t, trainer);
+  BackpropTrainingStats_t* training_stats = NULL;
+  BackpropExerciseStats_t* exercise_stats = NULL;
+  BackpropNetwork_t* network = NULL;
+  BackpropTrainingSet_t* training_set = NULL;
+  BACKPROP_FLOAT_T error = 0;
 
+  Data_Get_Struct(trainer_val, BackpropTrainer_t, trainer);
   if (!trainer)
   {
     rb_raise(rb_eArgError, "NULL trainer");
     return Qnil;
   }
 
-  BackpropTrainingStats_t* training_stats = NULL;
   Data_Get_Struct(training_stats_val, BackpropTrainingStats_t, training_stats);
-
   if (!training_stats)
   {
     rb_raise(rb_eArgError, "NULL training stats");
     return Qnil;
   }
 
-  BackpropExerciseStats_t* exercise_stats = NULL;
   Data_Get_Struct(exercise_stats_val, BackpropExerciseStats_t, exercise_stats);
-
   if (!exercise_stats)
   {
     rb_raise(rb_eArgError, "NULL exercise stats");
     return Qnil;
   }
 
-  BackpropNetwork_t* network = NULL;
   Data_Get_Struct(network_val, BackpropNetwork_t, network);
 
   if (!network)
@@ -2014,21 +2059,19 @@ static VALUE CBackpropTrainer_train( VALUE trainer_val
     return Qnil;
   }
 
-
-  BackpropTrainingSet_t* training_set = NULL;
   Data_Get_Struct(training_set_val, BackpropTrainingSet_t, training_set);
-
   if (!training_set)
   {
     rb_raise(rb_eArgError, "NULL training set");
     return Qnil;
   }
 
-  BACKPROP_FLOAT_T error = BackpropTrainer_Train( trainer
-                                                , training_stats
-                                                , exercise_stats
-                                                , network
-                                                , training_set);
+
+  error = BackpropTrainer_Train( trainer
+                               , training_stats
+                               , exercise_stats
+                               , network
+                               , training_set);
 
   return rb_float_new(error);
 }
@@ -2044,44 +2087,38 @@ static VALUE CBackpropTrainer_exercise( VALUE self_val
   BACKPROP_TRACE(__FUNCTION__);
 
   BackpropTrainer_t* trainer = NULL;
-  Data_Get_Struct(self_val, BackpropTrainer_t, trainer);
+  BackpropExerciseStats_t* stats = NULL;
+  BackpropNetwork_t* network = NULL;
+  BackpropTrainingSet_t* training_set = NULL;
+  BACKPROP_FLOAT_T error = 0.0;
 
+  Data_Get_Struct(self_val, BackpropTrainer_t, trainer);
   if (!trainer)
   {
     rb_raise(rb_eArgError, "NULL self");
     return Qnil;
   }
 
-  BackpropExerciseStats_t* stats = NULL;
   Data_Get_Struct(stats_val, BackpropExerciseStats_t, stats);
-
   if (!stats)
   {
     rb_raise(rb_eArgError, "NULL stats");
     return Qnil;
   }
 
-  BackpropNetwork_t* network = NULL;
   Data_Get_Struct(network_val, BackpropNetwork_t, network);
-
   if (!network)
   {
     rb_raise(rb_eArgError, "NULL network");
     return Qnil;
   }
 
-
-  BackpropTrainingSet_t* training_set = NULL;
   Data_Get_Struct(training_set_val, BackpropTrainingSet_t, training_set);
-
   if (!training_set)
   {
     rb_raise(rb_eArgError, "NULL training set");
     return Qnil;
   }
-
-
-  BACKPROP_FLOAT_T error = 0.0;
 
   error = BackpropTrainer_Exercise(trainer, stats, network, training_set);
 
@@ -2094,11 +2131,12 @@ static VALUE CBackpropTrainer_exercise( VALUE self_val
 static VALUE CBackpropTrainer_get_error_tolerance(VALUE self)
 {
   BACKPROP_TRACE(__FUNCTION__);
+  {
+    BackpropTrainer_t* trainer;
+    Data_Get_Struct(self, BackpropTrainer_t, trainer);
 
-  BackpropTrainer_t* trainer;
-  Data_Get_Struct(self, BackpropTrainer_t, trainer);
-
-  return rb_float_new(BackpropTrainer_GetErrorTolerance(trainer));
+    return rb_float_new(BackpropTrainer_GetErrorTolerance(trainer));
+  }
 }
 
 
@@ -2107,11 +2145,12 @@ static VALUE CBackpropTrainer_get_error_tolerance(VALUE self)
 static VALUE CBackpropTrainer_get_learning_rate(VALUE self)
 {
   BACKPROP_TRACE(__FUNCTION__);
+  {
+    BackpropTrainer_t* trainer;
+    Data_Get_Struct(self, BackpropTrainer_t, trainer);
 
-  BackpropTrainer_t* trainer;
-  Data_Get_Struct(self, BackpropTrainer_t, trainer);
-
-  return rb_float_new(BackpropTrainer_GetLearningRate(trainer));
+    return rb_float_new(BackpropTrainer_GetLearningRate(trainer));
+  }
 }
 
 
@@ -2120,11 +2159,12 @@ static VALUE CBackpropTrainer_get_learning_rate(VALUE self)
 static VALUE CBackpropTrainer_get_mutation_rate(VALUE self)
 {
   BACKPROP_TRACE(__FUNCTION__);
+  {
+    BackpropTrainer_t* trainer;
+    Data_Get_Struct(self, BackpropTrainer_t, trainer);
 
-  BackpropTrainer_t* trainer;
-  Data_Get_Struct(self, BackpropTrainer_t, trainer);
-
-  return rb_float_new(BackpropTrainer_GetMutationRate(trainer));
+    return rb_float_new(BackpropTrainer_GetMutationRate(trainer));
+  }
 }
 
 
@@ -2133,11 +2173,12 @@ static VALUE CBackpropTrainer_get_mutation_rate(VALUE self)
 static VALUE CBackpropTrainer_get_momentum_rate(VALUE self)
 {
   BACKPROP_TRACE(__FUNCTION__);
+  {
+    BackpropTrainer_t* trainer;
+    Data_Get_Struct(self, BackpropTrainer_t, trainer);
 
-  BackpropTrainer_t* trainer;
-  Data_Get_Struct(self, BackpropTrainer_t, trainer);
-
-  return rb_float_new(BackpropTrainer_GetMomentumRate(trainer));
+    return rb_float_new(BackpropTrainer_GetMomentumRate(trainer));
+  }
 }
 
 
@@ -2146,11 +2187,12 @@ static VALUE CBackpropTrainer_get_momentum_rate(VALUE self)
 static VALUE CBackpropTrainer_get_max_reps(VALUE self)
 {
   BACKPROP_TRACE(__FUNCTION__);
+  {
+    BackpropTrainer_t* trainer;
+    Data_Get_Struct(self, BackpropTrainer_t, trainer);
 
-  BackpropTrainer_t* trainer;
-  Data_Get_Struct(self, BackpropTrainer_t, trainer);
-
-  return INT2NUM(BackpropTrainer_GetMaxReps(trainer));
+    return INT2NUM(BackpropTrainer_GetMaxReps(trainer));
+  }
 }
 
 
@@ -2159,11 +2201,12 @@ static VALUE CBackpropTrainer_get_max_reps(VALUE self)
 static VALUE CBackpropTrainer_get_max_batch_sets(VALUE self)
 {
   BACKPROP_TRACE(__FUNCTION__);
+  {
+    BackpropTrainer_t* trainer;
+    Data_Get_Struct(self, BackpropTrainer_t, trainer);
 
-  BackpropTrainer_t* trainer;
-  Data_Get_Struct(self, BackpropTrainer_t, trainer);
-
-  return INT2NUM(BackpropTrainer_GetMaxBatchSets(trainer));
+    return INT2NUM(BackpropTrainer_GetMaxBatchSets(trainer));
+  }
 }
 
 
@@ -2172,13 +2215,14 @@ static VALUE CBackpropTrainer_get_max_batch_sets(VALUE self)
 static VALUE CBackpropTrainer_set_max_batch_sets(VALUE self, VALUE value)
 {
   BACKPROP_TRACE(__FUNCTION__);
+  {
+    BackpropTrainer_t* trainer;
+    Data_Get_Struct(self, BackpropTrainer_t, trainer);
 
-  BackpropTrainer_t* trainer;
-  Data_Get_Struct(self, BackpropTrainer_t, trainer);
+    BackpropTrainer_SetMaxBatchSets(trainer, NUM2INT(value));
 
-  BackpropTrainer_SetMaxBatchSets(trainer, NUM2INT(value));
-
-  return self;
+    return self;
+  }
 }
 
 
@@ -2187,11 +2231,12 @@ static VALUE CBackpropTrainer_set_max_batch_sets(VALUE self, VALUE value)
 static VALUE CBackpropTrainer_get_max_batches(VALUE self)
 {
   BACKPROP_TRACE(__FUNCTION__);
+  {
+    BackpropTrainer_t* trainer;
+    Data_Get_Struct(self, BackpropTrainer_t, trainer);
 
-  BackpropTrainer_t* trainer;
-  Data_Get_Struct(self, BackpropTrainer_t, trainer);
-
-  return INT2NUM(BackpropTrainer_GetMaxBatches(trainer));
+    return INT2NUM(BackpropTrainer_GetMaxBatches(trainer));
+  }
 }
 
 
@@ -2200,13 +2245,14 @@ static VALUE CBackpropTrainer_get_max_batches(VALUE self)
 static VALUE CBackpropTrainer_set_max_batches(VALUE self, VALUE value)
 {
   BACKPROP_TRACE(__FUNCTION__);
+  {
+    BackpropTrainer_t* trainer;
+    Data_Get_Struct(self, BackpropTrainer_t, trainer);
 
-  BackpropTrainer_t* trainer;
-  Data_Get_Struct(self, BackpropTrainer_t, trainer);
+    BackpropTrainer_SetMaxBatches(trainer, NUM2INT(value));
 
-  BackpropTrainer_SetMaxBatches(trainer, NUM2INT(value));
-
-  return self;
+    return self;
+  }
 }
 
 
@@ -2215,11 +2261,12 @@ static VALUE CBackpropTrainer_set_max_batches(VALUE self, VALUE value)
 static VALUE CBackpropTrainer_get_stagnate_tolerance(VALUE self)
 {
   BACKPROP_TRACE(__FUNCTION__);
+  {
+    BackpropTrainer_t* trainer;
+    Data_Get_Struct(self, BackpropTrainer_t, trainer);
 
-  BackpropTrainer_t* trainer;
-  Data_Get_Struct(self, BackpropTrainer_t, trainer);
-
-  return rb_float_new(BackpropTrainer_GetStagnateTolerance(trainer));
+    return rb_float_new(BackpropTrainer_GetStagnateTolerance(trainer));
+  }
 }
 
 
@@ -2228,11 +2275,12 @@ static VALUE CBackpropTrainer_get_stagnate_tolerance(VALUE self)
 static VALUE CBackpropTrainer_get_max_stagnate_sets(VALUE self)
 {
   BACKPROP_TRACE(__FUNCTION__);
+  {
+    BackpropTrainer_t* trainer;
+    Data_Get_Struct(self, BackpropTrainer_t, trainer);
 
-  BackpropTrainer_t* trainer;
-  Data_Get_Struct(self, BackpropTrainer_t, trainer);
-
-  return INT2NUM(BackpropTrainer_GetMaxStagnateSets(trainer));
+    return INT2NUM(BackpropTrainer_GetMaxStagnateSets(trainer));
+  }
 }
 
 
@@ -2241,11 +2289,12 @@ static VALUE CBackpropTrainer_get_max_stagnate_sets(VALUE self)
 static VALUE CBackpropTrainer_get_max_stagnate_batches(VALUE self)
 {
   BACKPROP_TRACE(__FUNCTION__);
+  {
+    BackpropTrainer_t* trainer;
+    Data_Get_Struct(self, BackpropTrainer_t, trainer);
 
-  BackpropTrainer_t* trainer;
-  Data_Get_Struct(self, BackpropTrainer_t, trainer);
-
-  return INT2NUM(BackpropTrainer_GetMaxStagnateBatches(trainer));
+    return INT2NUM(BackpropTrainer_GetMaxStagnateBatches(trainer));
+  }
 }
 
 
@@ -2254,11 +2303,12 @@ static VALUE CBackpropTrainer_get_max_stagnate_batches(VALUE self)
 static VALUE CBackpropTrainer_get_min_set_weight_correction_limit(VALUE self)
 {
   BACKPROP_TRACE(__FUNCTION__);
+  {
+    BackpropTrainer_t* trainer;
+    Data_Get_Struct(self, BackpropTrainer_t, trainer);
 
-  BackpropTrainer_t* trainer;
-  Data_Get_Struct(self, BackpropTrainer_t, trainer);
-
-  return rb_float_new(BackpropTrainer_GetMinSetWeightCorrectionLimit(trainer));
+    return rb_float_new(BackpropTrainer_GetMinSetWeightCorrectionLimit(trainer));
+  }
 }
 
 
@@ -2267,11 +2317,12 @@ static VALUE CBackpropTrainer_get_min_set_weight_correction_limit(VALUE self)
 static VALUE CBackpropTrainer_get_min_batch_weight_correction_limit(VALUE self)
 {
   BACKPROP_TRACE(__FUNCTION__);
+  {
+    BackpropTrainer_t* trainer;
+    Data_Get_Struct(self, BackpropTrainer_t, trainer);
 
-  BackpropTrainer_t* trainer;
-  Data_Get_Struct(self, BackpropTrainer_t, trainer);
-
-  return rb_float_new(BackpropTrainer_GetMinBatchWeightCorrectionLimit(trainer));
+    return rb_float_new(BackpropTrainer_GetMinBatchWeightCorrectionLimit(trainer));
+  }
 }
 
 
@@ -2280,11 +2331,12 @@ static VALUE CBackpropTrainer_get_min_batch_weight_correction_limit(VALUE self)
 static VALUE CBackpropTrainer_get_batch_prune_threshold(VALUE self)
 {
   BACKPROP_TRACE(__FUNCTION__);
+  {
+    BackpropTrainer_t* trainer;
+    Data_Get_Struct(self, BackpropTrainer_t, trainer);
 
-  BackpropTrainer_t* trainer;
-  Data_Get_Struct(self, BackpropTrainer_t, trainer);
-
-  return rb_float_new(BackpropTrainer_GetBatchPruneThreshold(trainer));
+    return rb_float_new(BackpropTrainer_GetBatchPruneThreshold(trainer));
+  }
 }
 
 
@@ -2293,11 +2345,12 @@ static VALUE CBackpropTrainer_get_batch_prune_threshold(VALUE self)
 static VALUE CBackpropTrainer_get_training_ratio(VALUE self)
 {
   BACKPROP_TRACE(__FUNCTION__);
+  {
+    BackpropTrainer_t* trainer;
+    Data_Get_Struct(self, BackpropTrainer_t, trainer);
 
-  BackpropTrainer_t* trainer;
-  Data_Get_Struct(self, BackpropTrainer_t, trainer);
-
-  return rb_float_new(BackpropTrainer_GetTrainingRatio(trainer));
+    return rb_float_new(BackpropTrainer_GetTrainingRatio(trainer));
+  }
 }
 
 
@@ -2307,11 +2360,12 @@ static VALUE CBackpropTrainer_get_training_ratio(VALUE self)
 static VALUE CBackpropTrainer_get_batch_prune_rate(VALUE self)
 {
   BACKPROP_TRACE(__FUNCTION__);
+  {
+    BackpropTrainer_t* trainer;
+    Data_Get_Struct(self, BackpropTrainer_t, trainer);
 
-  BackpropTrainer_t* trainer;
-  Data_Get_Struct(self, BackpropTrainer_t, trainer);
-
-  return rb_float_new(BackpropTrainer_GetBatchPruneRate(trainer));
+    return rb_float_new(BackpropTrainer_GetBatchPruneRate(trainer));
+  }
 }
 
 
@@ -2320,13 +2374,14 @@ static VALUE CBackpropTrainer_get_batch_prune_rate(VALUE self)
 static VALUE CBackpropTrainer_set_batch_prune_rate(VALUE self, VALUE value)
 {
   BACKPROP_TRACE(__FUNCTION__);
+  {
+    BackpropTrainer_t* trainer;
+    Data_Get_Struct(self, BackpropTrainer_t, trainer);
 
-  BackpropTrainer_t* trainer;
-  Data_Get_Struct(self, BackpropTrainer_t, trainer);
+    BackpropTrainer_SetBatchPruneRate(trainer, NUM2DBL(value));
 
-  BackpropTrainer_SetBatchPruneRate(trainer, NUM2DBL(value));
-
-  return self;
+    return self;
+  }
 }
 
 
@@ -2335,28 +2390,29 @@ static VALUE CBackpropTrainer_set_batch_prune_rate(VALUE self, VALUE value)
 static VALUE CBackpropTrainer_to_hash(VALUE self)
 {
   BACKPROP_TRACE(__FUNCTION__);
+  {
+    BackpropTrainer_t* trainer;
+    Data_Get_Struct(self, BackpropTrainer_t, trainer);
 
-  BackpropTrainer_t* trainer;
-  Data_Get_Struct(self, BackpropTrainer_t, trainer);
+    VALUE hash = rb_hash_new();
+    rb_hash_aset(hash, rb_str_new2("error_tolerance"), CBackpropTrainer_get_error_tolerance(self));
+    rb_hash_aset(hash, rb_str_new2("learning_rate"), CBackpropTrainer_get_learning_rate(self));
+    rb_hash_aset(hash, rb_str_new2("mutation_rate"), CBackpropTrainer_get_mutation_rate(self));
+    rb_hash_aset(hash, rb_str_new2("momentum_rate"), CBackpropTrainer_get_momentum_rate(self));
+    rb_hash_aset(hash, rb_str_new2("max_reps"), CBackpropTrainer_get_max_reps(self));
+    rb_hash_aset(hash, rb_str_new2("max_batch_sets"), CBackpropTrainer_get_max_batch_sets(self));
+    rb_hash_aset(hash, rb_str_new2("max_batches"), CBackpropTrainer_get_max_batches(self));
+    rb_hash_aset(hash, rb_str_new2("stagnate_tolerance"), CBackpropTrainer_get_stagnate_tolerance(self));
+    rb_hash_aset(hash, rb_str_new2("max_stagnate_sets"), CBackpropTrainer_get_max_stagnate_sets(self));
+    rb_hash_aset(hash, rb_str_new2("max_stagnate_batches"), CBackpropTrainer_get_max_stagnate_batches(self));
+    rb_hash_aset(hash, rb_str_new2("min_set_weight_correction_limit"), CBackpropTrainer_get_min_set_weight_correction_limit(self));
+    rb_hash_aset(hash, rb_str_new2("min_batch_weight_correction_limit"), CBackpropTrainer_get_min_batch_weight_correction_limit(self));
+    rb_hash_aset(hash, rb_str_new2("batch_prune_threshold"), CBackpropTrainer_get_batch_prune_threshold(self));
+    rb_hash_aset(hash, rb_str_new2("batch_prune_rate"), CBackpropTrainer_get_batch_prune_rate(self));
+    rb_hash_aset(hash, rb_str_new2("training_ratio"), CBackpropTrainer_get_training_ratio(self));
 
-  VALUE hash = rb_hash_new();
-  rb_hash_aset(hash, rb_str_new2("error_tolerance"), CBackpropTrainer_get_error_tolerance(self));
-  rb_hash_aset(hash, rb_str_new2("learning_rate"), CBackpropTrainer_get_learning_rate(self));
-  rb_hash_aset(hash, rb_str_new2("mutation_rate"), CBackpropTrainer_get_mutation_rate(self));
-  rb_hash_aset(hash, rb_str_new2("momentum_rate"), CBackpropTrainer_get_momentum_rate(self));
-  rb_hash_aset(hash, rb_str_new2("max_reps"), CBackpropTrainer_get_max_reps(self));
-  rb_hash_aset(hash, rb_str_new2("max_batch_sets"), CBackpropTrainer_get_max_batch_sets(self));
-  rb_hash_aset(hash, rb_str_new2("max_batches"), CBackpropTrainer_get_max_batches(self));
-  rb_hash_aset(hash, rb_str_new2("stagnate_tolerance"), CBackpropTrainer_get_stagnate_tolerance(self));
-  rb_hash_aset(hash, rb_str_new2("max_stagnate_sets"), CBackpropTrainer_get_max_stagnate_sets(self));
-  rb_hash_aset(hash, rb_str_new2("max_stagnate_batches"), CBackpropTrainer_get_max_stagnate_batches(self));
-  rb_hash_aset(hash, rb_str_new2("min_set_weight_correction_limit"), CBackpropTrainer_get_min_set_weight_correction_limit(self));
-  rb_hash_aset(hash, rb_str_new2("min_batch_weight_correction_limit"), CBackpropTrainer_get_min_batch_weight_correction_limit(self));
-  rb_hash_aset(hash, rb_str_new2("batch_prune_threshold"), CBackpropTrainer_get_batch_prune_threshold(self));
-  rb_hash_aset(hash, rb_str_new2("batch_prune_rate"), CBackpropTrainer_get_batch_prune_rate(self));
-  rb_hash_aset(hash, rb_str_new2("training_ratio"), CBackpropTrainer_get_training_ratio(self));
-
-  return hash;
+    return hash;
+  }
 }
 
 
@@ -2385,25 +2441,26 @@ static void CBackpropTrainer_Free(struct BackpropTrainer* trainer)
 static VALUE CBackpropTrainer_new(VALUE klass, VALUE network_value)
 {
   BACKPROP_TRACE(__FUNCTION__);
+  {
+    // get the network
+    BackpropNetwork_t* network;
+    Data_Get_Struct(network_value, BackpropNetwork_t, network);
 
-  // get the network
-  BackpropNetwork_t* network;
-  Data_Get_Struct(network_value, BackpropNetwork_t, network);
+    // allocate a trainer
+    BackpropTrainer_t* trainer = BackpropTrainer_Malloc(network);
 
-  // allocate a trainer
-  BackpropTrainer_t* trainer = BackpropTrainer_Malloc(network);
+    BackpropTrainer_SetToDefault(trainer);
+    BackpropTrainer_SetToDefaultIO(trainer);
 
-  BackpropTrainer_SetToDefault(trainer);
-  BackpropTrainer_SetToDefaultIO(trainer);
+    // wrap it in a ruby object, this will cause GC to call free function
+    VALUE tdata = Data_Wrap_Struct(klass, 0, CBackpropTrainer_Free, trainer);
 
-  // wrap it in a ruby object, this will cause GC to call free function
-  VALUE tdata = Data_Wrap_Struct(klass, 0, CBackpropTrainer_Free, trainer);
+    // call initialize
+    VALUE argv[1] = {network_value};
+    rb_obj_call_init(tdata, 1, argv);
 
-  // call initialize
-  VALUE argv[1] = {network_value};
-  rb_obj_call_init(tdata, 1, argv);
-
-  return tdata;
+    return tdata;
+  }
 }
 
 
@@ -2419,11 +2476,12 @@ static VALUE CBackpropTrainer_new(VALUE klass, VALUE network_value)
 static VALUE CBackpropEvolutionStats_get_generation_count(VALUE self)
 {
   BACKPROP_TRACE(__FUNCTION__);
+  {
+    BackpropEvolutionStats_t* stats;
+    Data_Get_Struct(self, BackpropEvolutionStats_t, stats);
 
-  BackpropEvolutionStats_t* stats;
-  Data_Get_Struct(self, BackpropEvolutionStats_t, stats);
-
-  return INT2NUM(stats->generation_count);
+    return INT2NUM(stats->generation_count);
+  }
 }
 
 
@@ -2432,11 +2490,12 @@ static VALUE CBackpropEvolutionStats_get_generation_count(VALUE self)
 static VALUE CBackpropEvolutionStats_get_mate_networks_count(VALUE self)
 {
   BACKPROP_TRACE(__FUNCTION__);
+  {
+    BackpropEvolutionStats_t* stats;
+    Data_Get_Struct(self, BackpropEvolutionStats_t, stats);
 
-  BackpropEvolutionStats_t* stats;
-  Data_Get_Struct(self, BackpropEvolutionStats_t, stats);
-
-  return INT2NUM(stats->mate_networks_count);
+    return INT2NUM(stats->mate_networks_count);
+  }
 }
 
 
@@ -2445,11 +2504,12 @@ static VALUE CBackpropEvolutionStats_get_mate_networks_count(VALUE self)
 static VALUE CBackpropEvolutionStats_get_evolve_clock(VALUE self)
 {
   BACKPROP_TRACE(__FUNCTION__);
+  {
+    BackpropEvolutionStats_t* stats;
+    Data_Get_Struct(self, BackpropEvolutionStats_t, stats);
 
-  BackpropEvolutionStats_t* stats;
-  Data_Get_Struct(self, BackpropEvolutionStats_t, stats);
-
-  return INT2NUM(stats->evolve_clock);
+    return INT2NUM(stats->evolve_clock);
+  }
 }
 
 
@@ -2458,14 +2518,15 @@ static VALUE CBackpropEvolutionStats_get_evolve_clock(VALUE self)
 static VALUE CBackpropEvolutionStats_to_hash(VALUE self)
 {
   BACKPROP_TRACE(__FUNCTION__);
+  {
+    VALUE hash = rb_hash_new();
 
-  VALUE hash = rb_hash_new();
+    rb_hash_aset(hash, rb_str_new2("generation_count"), CBackpropEvolutionStats_get_generation_count(self));
+    rb_hash_aset(hash, rb_str_new2("mate_networks_count"), CBackpropEvolutionStats_get_mate_networks_count(self));
+    rb_hash_aset(hash, rb_str_new2("evolve_clock"), CBackpropEvolutionStats_get_evolve_clock(self));
 
-  rb_hash_aset(hash, rb_str_new2("generation_count"), CBackpropEvolutionStats_get_generation_count(self));
-  rb_hash_aset(hash, rb_str_new2("mate_networks_count"), CBackpropEvolutionStats_get_mate_networks_count(self));
-  rb_hash_aset(hash, rb_str_new2("evolve_clock"), CBackpropEvolutionStats_get_evolve_clock(self));
-
-  return hash;
+    return hash;
+  }
 }
 
 
@@ -2474,16 +2535,17 @@ static VALUE CBackpropEvolutionStats_to_hash(VALUE self)
 static VALUE CBackpropEvolutionStats_new(VALUE klass)
 {
   BACKPROP_TRACE(__FUNCTION__);
+  {
+    BackpropEvolutionStats_t* obj = xmalloc(sizeof(BackpropEvolutionStats_t));
 
-  BackpropEvolutionStats_t* obj = xmalloc(sizeof(BackpropEvolutionStats_t));
+    // wrap it in a ruby object, this will cause GC to call free function
+    VALUE tdata = Data_Wrap_Struct(klass, 0, xfree, obj);
 
-  // wrap it in a ruby object, this will cause GC to call free function
-  VALUE tdata = Data_Wrap_Struct(klass, 0, xfree, obj);
+    // call initialize
+    //rb_obj_call_init(tdata, 0, 0);
 
-  // call initialize
-  //rb_obj_call_init(tdata, 0, 0);
-
-  return tdata;
+    return tdata;
+  }
 }
 
 
@@ -2498,11 +2560,12 @@ static VALUE CBackpropEvolutionStats_new(VALUE klass)
 static VALUE CBackpropEvolver_get_pool_count(VALUE self)
 {
   BACKPROP_TRACE(__FUNCTION__);
+  {
+    BackpropEvolver_t* obj;
+    Data_Get_Struct(self, BackpropEvolver_t, obj);
 
-  BackpropEvolver_t* obj;
-  Data_Get_Struct(self, BackpropEvolver_t, obj);
-
-  return INT2NUM(obj->pool_count);
+    return INT2NUM(obj->pool_count);
+  }
 }
 
 
@@ -2511,11 +2574,12 @@ static VALUE CBackpropEvolver_get_pool_count(VALUE self)
 static VALUE CBackpropEvolver_get_max_generations(VALUE self)
 {
   BACKPROP_TRACE(__FUNCTION__);
+  {
+    BackpropEvolver_t* obj;
+    Data_Get_Struct(self, BackpropEvolver_t, obj);
 
-  BackpropEvolver_t* obj;
-  Data_Get_Struct(self, BackpropEvolver_t, obj);
-
-  return INT2NUM(obj->max_generations);
+    return INT2NUM(obj->max_generations);
+  }
 }
 
 
@@ -2524,11 +2588,12 @@ static VALUE CBackpropEvolver_get_max_generations(VALUE self)
 static VALUE CBackpropEvolver_get_mate_rate(VALUE self)
 {
   BACKPROP_TRACE(__FUNCTION__);
+  {
+    BackpropEvolver_t* obj;
+    Data_Get_Struct(self, BackpropEvolver_t, obj);
 
-  BackpropEvolver_t* obj;
-  Data_Get_Struct(self, BackpropEvolver_t, obj);
-
-  return rb_float_new(obj->mate_rate);
+    return rb_float_new(obj->mate_rate);
+  }
 }
 
 
@@ -2537,11 +2602,12 @@ static VALUE CBackpropEvolver_get_mate_rate(VALUE self)
 static VALUE CBackpropEvolver_get_mutation_limit(VALUE self)
 {
   BACKPROP_TRACE(__FUNCTION__);
+  {
+    BackpropEvolver_t* obj;
+    Data_Get_Struct(self, BackpropEvolver_t, obj);
 
-  BackpropEvolver_t* obj;
-  Data_Get_Struct(self, BackpropEvolver_t, obj);
-
-  return rb_float_new(obj->mutation_limit);
+    return rb_float_new(obj->mutation_limit);
+  }
 }
 
 
@@ -2550,11 +2616,12 @@ static VALUE CBackpropEvolver_get_mutation_limit(VALUE self)
 static VALUE CBackpropEvolver_get_seed(VALUE self)
 {
   BACKPROP_TRACE(__FUNCTION__);
+  {
+    BackpropEvolver_t* obj;
+    Data_Get_Struct(self, BackpropEvolver_t, obj);
 
-  BackpropEvolver_t* obj;
-  Data_Get_Struct(self, BackpropEvolver_t, obj);
-
-  return rb_float_new(obj->mutation_limit);
+    return rb_float_new(obj->mutation_limit);
+  }
 }
 
 
@@ -2563,16 +2630,17 @@ static VALUE CBackpropEvolver_get_seed(VALUE self)
 static VALUE CBackpropEvolver_to_hash(VALUE self)
 {
   BACKPROP_TRACE(__FUNCTION__);
+  {
+    VALUE hash = rb_hash_new();
 
-  VALUE hash = rb_hash_new();
+    rb_hash_aset(hash, rb_str_new2("pool_count"), CBackpropEvolver_get_pool_count(self));
+    rb_hash_aset(hash, rb_str_new2("max_generations"), CBackpropEvolver_get_max_generations(self));
+    rb_hash_aset(hash, rb_str_new2("mate_rate"), CBackpropEvolver_get_mate_rate(self));
+    rb_hash_aset(hash, rb_str_new2("mutation_limit"), CBackpropEvolver_get_mutation_limit(self));
+    rb_hash_aset(hash, rb_str_new2("seed"), CBackpropEvolver_get_seed(self));
 
-  rb_hash_aset(hash, rb_str_new2("pool_count"), CBackpropEvolver_get_pool_count(self));
-  rb_hash_aset(hash, rb_str_new2("max_generations"), CBackpropEvolver_get_max_generations(self));
-  rb_hash_aset(hash, rb_str_new2("mate_rate"), CBackpropEvolver_get_mate_rate(self));
-  rb_hash_aset(hash, rb_str_new2("mutation_limit"), CBackpropEvolver_get_mutation_limit(self));
-  rb_hash_aset(hash, rb_str_new2("seed"), CBackpropEvolver_get_seed(self));
-
-  return hash;
+    return hash;
+  }
 }
 
 
@@ -2581,13 +2649,14 @@ static VALUE CBackpropEvolver_to_hash(VALUE self)
 static VALUE CBackpropEvolver_set_to_default(VALUE self)
 {
   BACKPROP_TRACE(__FUNCTION__);
+  {
+    BackpropEvolver_t* obj;
+    Data_Get_Struct(self, BackpropEvolver_t, obj);
 
-  BackpropEvolver_t* obj;
-  Data_Get_Struct(self, BackpropEvolver_t, obj);
+    BackpropEvolver_SetToDefault(obj);
 
-  BackpropEvolver_SetToDefault(obj);
-
-  return self;
+    return self;
+  }
 }
 
 
@@ -2604,24 +2673,26 @@ static VALUE CBackpropEvolver_evolve( VALUE evolver_val
                                     , VALUE training_set_val)
 {
   BACKPROP_TRACE(__FUNCTION__);
+  {
+    VALUE_TO_C_PTR(BackpropEvolver_t, evolver, evolver_val);
+    VALUE_TO_C_PTR(BackpropEvolutionStats_t, evolution_stats, evolution_stats_val);
+    VALUE_TO_C_PTR(BackpropTrainer_t, trainer, trainer_val);
+    VALUE_TO_C_PTR(BackpropTrainingStats_t, training_stats, training_stats_val);
+    VALUE_TO_C_PTR(BackpropExerciseStats_t, exercise_stats, exercise_stats_val);
+    VALUE_TO_C_PTR(BackpropNetwork_t, network, network_val);
+    VALUE_TO_C_PTR(BackpropTrainingSet_t, training_set, training_set_val);
+    {
+      BACKPROP_FLOAT_T result = BackpropEvolver_Evolve( evolver
+                                                      , evolution_stats
+                                                      , trainer
+                                                      , training_stats
+                                                      , exercise_stats
+                                                      , network
+                                                      , training_set);
 
-  VALUE_TO_C_PTR(BackpropEvolver_t, evolver, evolver_val);
-  VALUE_TO_C_PTR(BackpropEvolutionStats_t, evolution_stats, evolution_stats_val);
-  VALUE_TO_C_PTR(BackpropTrainer_t, trainer, trainer_val);
-  VALUE_TO_C_PTR(BackpropTrainingStats_t, training_stats, training_stats_val);
-  VALUE_TO_C_PTR(BackpropExerciseStats_t, exercise_stats, exercise_stats_val);
-  VALUE_TO_C_PTR(BackpropNetwork_t, network, network_val);
-  VALUE_TO_C_PTR(BackpropTrainingSet_t, training_set, training_set_val);
-
-  BACKPROP_FLOAT_T result = BackpropEvolver_Evolve( evolver
-                                                  , evolution_stats
-                                                  , trainer
-                                                  , training_stats
-                                                  , exercise_stats
-                                                  , network
-                                                  , training_set);
-
-  return rb_float_new(result);
+      return rb_float_new(result);
+    }
+  }
 }
 
 
@@ -2630,16 +2701,17 @@ static VALUE CBackpropEvolver_evolve( VALUE evolver_val
 static VALUE CBackpropEvolver_new(VALUE klass)
 {
   BACKPROP_TRACE(__FUNCTION__);
+  {
+    struct BackpropEvolver* obj = xmalloc(sizeof(struct BackpropEvolver));
 
-  struct BackpropEvolver* obj = xmalloc(sizeof(struct BackpropEvolver));
+    // wrap it in a ruby object, this will cause GC to call free function
+    VALUE tdata = Data_Wrap_Struct(klass, 0, xfree, obj);
 
-  // wrap it in a ruby object, this will cause GC to call free function
-  VALUE tdata = Data_Wrap_Struct(klass, 0, xfree, obj);
+    // call initialize
+    //rb_obj_call_init(tdata, 0, 0);
 
-  // call initialize
-  //rb_obj_call_init(tdata, 0, 0);
-
-  return tdata;
+    return tdata;
+  }
 }
 
 

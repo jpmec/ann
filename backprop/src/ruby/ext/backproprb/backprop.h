@@ -733,6 +733,9 @@ void BackpropTrainer_Free(struct BackpropTrainer* network);
 void BackpropTrainer_SetToDefault(struct BackpropTrainer* self);
 
 
+struct BackpropTrainerEvents* BackpropTrainer_GetEvents(BackpropTrainer_t* self);
+
+
 BACKPROP_FLOAT_T BackpropTrainer_GetErrorTolerance(const struct BackpropTrainer* self);
 
 
@@ -858,6 +861,8 @@ BACKPROP_FLOAT_T BackpropTrainer_Train( struct BackpropTrainer* trainer
 /** Use the BackpropTrainer to prune the network.
  */
 void BackpropTrainer_Prune(struct BackpropTrainer* trainer, struct BackpropNetwork* network, BACKPROP_FLOAT_T threshold);
+
+
 
 
 /** Structure to hold statistics about a BackpropNetwork evolution.
