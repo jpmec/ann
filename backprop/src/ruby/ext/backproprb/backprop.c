@@ -1189,7 +1189,7 @@ void BackpropNetwork_Activate(struct BackpropNetwork* self)
 
 
 
-void BackpropNetwork_Randomize(struct BackpropNetwork* self, unsigned int seed)
+void BackpropNetwork_Randomize(struct BackpropNetwork* self, BACKPROP_FLOAT_T gain, unsigned int seed)
 {
   BACKPROP_ASSERT(self);
 
@@ -1197,7 +1197,7 @@ void BackpropNetwork_Randomize(struct BackpropNetwork* self, unsigned int seed)
 
   for(size_t i = 0; i < self->layers.count; ++i)
   {
-    BackpropLayer_Randomize(self->layers.data + i, 4.0);
+    BackpropLayer_Randomize(self->layers.data + i, gain);
   }
 }
 
@@ -2749,6 +2749,7 @@ void BackpropEvolver_SetToDefault(BackpropEvolver_t* self)
   self->max_generations = 4; //32;
   self->mutation_limit = 1.0;
   self->seed = 0;
+  self->random_gain = 4.0;
 }
 
 
@@ -2785,7 +2786,7 @@ BACKPROP_FLOAT_T BackpropEvolver_Evolve(BackpropEvolver_t* evolver, BackpropEvol
       unsigned int seed = evolver->seed;
       for (size_t i = 1; i < evolver->pool_count; ++i)
       {
-        BackpropNetwork_Randomize(network_pool[i], seed);
+        BackpropNetwork_Randomize(network_pool[i], evolver->random_gain, seed);
         ++seed;
       }
     }

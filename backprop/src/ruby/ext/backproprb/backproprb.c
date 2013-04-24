@@ -1022,16 +1022,17 @@ static VALUE CBackpropNetwork_set_jitter(VALUE self, VALUE value)
 
 
 
-static VALUE CBackpropNetwork_randomize(VALUE self, VALUE seed_val)
+static VALUE CBackpropNetwork_randomize(VALUE self, VALUE gain_val, VALUE seed_val)
 {
   BACKPROP_TRACE(__FUNCTION__);
 
   BackpropNetwork_t* network;
   Data_Get_Struct(self, BackpropNetwork_t, network);
 
-  unsigned int seed = NUM2UINT(seed_val);
+  const BACKPROP_FLOAT_T gain = NUM2DBL(gain_val);
+  const unsigned int seed = NUM2UINT(seed_val);
 
-  BackpropNetwork_Randomize(network, seed);
+  BackpropNetwork_Randomize(network, gain, seed);
 
   return self;
 }
@@ -2747,14 +2748,14 @@ void Init_backproprb()
 
 
   // Define module methods
-  cBackproprb = rb_define_module("CBackproprb");
+  cBackproprb = rb_define_module("Backproprb");
   rb_define_module_function(cBackproprb, "used", CBackprop_used, 0);
   rb_define_module_function(cBackproprb, "sigmoid", CBackprop_sigmoid, 1);
   rb_define_module_function(cBackproprb, "uniform_random_int", CBackprop_uniform_random_int, 0);
 
 
   // Define class CBackproprb::CBackpropLayer
-  cBackpropLayer = rb_define_class_under(cBackproprb, "CLayer", rb_cObject);
+  cBackpropLayer = rb_define_class_under(cBackproprb, "Layer", rb_cObject);
   rb_define_singleton_method(cBackpropLayer, "new", CBackpropLayer_new, 2);
   rb_define_method(cBackpropLayer, "initialize", CBackpropLayer_initialize, 2);
   rb_define_method(cBackpropLayer, "w", CBackpropLayer_get_W, 0);
@@ -2771,7 +2772,7 @@ void Init_backproprb()
   rb_define_method(cBackpropLayer, "y", CBackpropLayer_get_y, 0);
   rb_define_method(cBackpropLayer, "y=", CBackpropLayer_set_y, 1);
   rb_define_method(cBackpropLayer, "y_count", CBackpropLayer_get_y_count, 0);
-  rb_define_method(cBackpropLayer, "randomize", CBackpropLayer_randomize, 1);
+  rb_define_method(cBackpropLayer, "randomize", CBackpropLayer_randomize, 2);
   rb_define_method(cBackpropLayer, "identity", CBackpropLayer_identity, 0);
   rb_define_method(cBackpropLayer, "reset", CBackpropLayer_reset, 0);
   rb_define_method(cBackpropLayer, "prune", CBackpropLayer_prune, 1);
@@ -2780,7 +2781,7 @@ void Init_backproprb()
 
 
   // Define class CBackproprb::CNetwork
-  cBackpropNetwork = rb_define_class_under(cBackproprb, "CNetwork", rb_cObject);
+  cBackpropNetwork = rb_define_class_under(cBackproprb, "Network", rb_cObject);
   rb_define_singleton_method(cBackpropNetwork, "new", CBackpropNetwork_new, 1);
   rb_define_method(cBackpropNetwork, "initialize", CBackpropNetwork_initialize, 1);
   rb_define_method(cBackpropNetwork, "activate", CBackpropNetwork_activate, 1);
@@ -2793,7 +2794,7 @@ void Init_backproprb()
 
   rb_define_method(cBackpropNetwork, "jitter", CBackpropNetwork_get_jitter, 0);
   rb_define_method(cBackpropNetwork, "jitter=", CBackpropNetwork_set_jitter, 1);
-  rb_define_method(cBackpropNetwork, "randomize", CBackpropNetwork_randomize, 1);
+  rb_define_method(cBackpropNetwork, "randomize", CBackpropNetwork_randomize, 2);
   rb_define_method(cBackpropNetwork, "identity", CBackpropNetwork_identity, 0);
   rb_define_method(cBackpropNetwork, "reset", CBackpropNetwork_reset, 0);
   rb_define_method(cBackpropNetwork, "round", CBackpropNetwork_round, 0);
@@ -2804,7 +2805,7 @@ void Init_backproprb()
   rb_define_method(cBackpropNetwork, "from_file", CBackpropNetwork_from_file, 1);
 
   // Define class CBackproprb::CNetworkStats
-  cBackpropNetworkStats = rb_define_class_under(cBackproprb, "CNetworkStats", rb_cObject);
+  cBackpropNetworkStats = rb_define_class_under(cBackproprb, "NetworkStats", rb_cObject);
   rb_define_singleton_method(cBackpropNetworkStats, "new", CBackpropNetworkStats_new, 0);
 
   rb_define_method(cBackpropNetworkStats, "x_size", CBackpropNetworkStats_get_x_size, 0);
@@ -2829,7 +2830,7 @@ void Init_backproprb()
 
 
   // Define class CBackproprb::CTrainingSet
-  cBackpropTrainingSet = rb_define_class_under(cBackproprb, "CTrainingSet", rb_cObject);
+  cBackpropTrainingSet = rb_define_class_under(cBackproprb, "TrainingSet", rb_cObject);
   rb_define_singleton_method(cBackpropTrainingSet, "new", CBackpropTrainingSet_new, 2);
   rb_define_method(cBackpropTrainingSet, "initialize", CBackpropTrainingSet_initialize, 2);
   rb_define_method(cBackpropTrainingSet, "count", CBackpropTrainingSet_count, 0);
@@ -2844,7 +2845,7 @@ void Init_backproprb()
 
 
   // Define class CBackproprb::CExerciseStats
-  cBackpropExerciseStats = rb_define_class_under(cBackproprb, "CExerciseStats", rb_cObject);
+  cBackpropExerciseStats = rb_define_class_under(cBackproprb, "ExerciseStats", rb_cObject);
   rb_define_singleton_method(cBackpropExerciseStats, "new", CBackpropExerciseStats_new, 0);
   rb_define_method(cBackpropExerciseStats, "exercise_clock_ticks", CBackpropExerciseStats_exercise_clock_ticks, 0);
   rb_define_method(cBackpropExerciseStats, "activate_count", CBackpropExerciseStats_activate_count, 0);
@@ -2853,7 +2854,7 @@ void Init_backproprb()
 
 
   // Define class CBackproprb::CTrainingStats
-  cBackpropTrainingStats = rb_define_class_under(cBackproprb, "CTrainingStats", rb_cObject);
+  cBackpropTrainingStats = rb_define_class_under(cBackproprb, "TrainingStats", rb_cObject);
   rb_define_singleton_method(cBackpropTrainingStats, "new", CBackpropTrainingStats_new, 0);
   rb_define_method(cBackpropTrainingStats, "set_weight_correction_total", CBackpropTrainingStats_set_weight_correction_total, 0);
   rb_define_method(cBackpropTrainingStats, "batch_weight_correction_total", CBackpropTrainingStats_batch_weight_correction_total, 0);
@@ -2867,7 +2868,7 @@ void Init_backproprb()
   rb_define_method(cBackpropTrainingStats, "to_hash", CBackpropTrainingStats_to_hash, 0);
 
   // Define class CBackprop::CTrainer
-  cBackpropTrainer = rb_define_class_under(cBackproprb, "CTrainer", rb_cObject);
+  cBackpropTrainer = rb_define_class_under(cBackproprb, "Trainer", rb_cObject);
   rb_define_singleton_method(cBackpropTrainer, "new", CBackpropTrainer_new, 1);
   rb_define_method(cBackpropTrainer, "initialize", CBackpropTrainer_initialize, 1);
 
@@ -2901,7 +2902,7 @@ void Init_backproprb()
   rb_define_method(cBackpropTrainer, "to_hash", CBackpropTrainer_to_hash, 0);
 
 
-  cBackpropEvolutionStats = rb_define_class_under(cBackproprb, "CEvolutionStats", rb_cObject);
+  cBackpropEvolutionStats = rb_define_class_under(cBackproprb, "EvolutionStats", rb_cObject);
   rb_define_singleton_method(cBackpropEvolutionStats, "new", CBackpropEvolutionStats_new, 0);
   rb_define_method(cBackpropEvolutionStats, "generation_count", CBackpropEvolutionStats_get_generation_count, 0);
   rb_define_method(cBackpropEvolutionStats, "mate_networks_count", CBackpropEvolutionStats_get_mate_networks_count, 0);
@@ -2909,7 +2910,7 @@ void Init_backproprb()
   rb_define_method(cBackpropEvolutionStats, "to_hash", CBackpropEvolutionStats_to_hash, 0);
 
 
-  cBackpropEvolver = rb_define_class_under(cBackproprb, "CEvolver", rb_cObject);
+  cBackpropEvolver = rb_define_class_under(cBackproprb, "Evolver", rb_cObject);
   rb_define_singleton_method(cBackpropEvolver, "new", CBackpropEvolver_new, 0);
   rb_define_method(cBackpropEvolver, "pool_count", CBackpropEvolver_get_pool_count, 0);
   rb_define_method(cBackpropEvolver, "max_generations", CBackpropEvolver_get_max_generations, 0);

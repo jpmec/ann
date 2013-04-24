@@ -372,7 +372,7 @@ const BackpropLayer_t* BackpropNetwork_GetConstLastLayer(const struct BackpropNe
 
 /** Randomize weights for a network.
  */
-void BackpropNetwork_Randomize(struct BackpropNetwork* self, unsigned int seed);
+void BackpropNetwork_Randomize(struct BackpropNetwork* self, BACKPROP_FLOAT_T gain, unsigned int seed);
 
 
 /** Round weights to nearest whole numbers.
@@ -889,6 +889,7 @@ typedef struct BackpropEvolver
   BACKPROP_FLOAT_T mate_rate;      ///< Proportion of alpha weight to beta weight.  0.5 is equal alpha and beta weights.  0.75 alpha is (0.75 * alpha) + (0.25 * beta).
   BACKPROP_FLOAT_T mutation_limit; ///< The maximum mutation in a single neuron weight.
   unsigned int seed;               ///< Seed used for random number generator.
+  BACKPROP_FLOAT_T random_gain;    ///< Gain to apply for random number generator.
 
 
   void (*BeforeMateNetworks)(const struct BackpropEvolver*, const BackpropEvolutionStats_t* stats, const struct BackpropNetwork* network);
