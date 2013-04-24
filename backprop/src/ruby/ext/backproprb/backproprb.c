@@ -1054,6 +1054,20 @@ static VALUE CBackpropNetwork_identity(VALUE self)
 
 
 
+static VALUE CBackpropNetwork_round(VALUE self)
+{
+  BACKPROP_TRACE(__FUNCTION__);
+
+  BackpropNetwork_t* network;
+  Data_Get_Struct(self, BackpropNetwork_t, network);
+
+  BackpropNetwork_Round(network);
+
+  return self;
+}
+
+
+
 static VALUE CBackpropNetwork_reset(VALUE self)
 {
   BACKPROP_TRACE(__FUNCTION__);
@@ -2782,6 +2796,7 @@ void Init_backproprb()
   rb_define_method(cBackpropNetwork, "randomize", CBackpropNetwork_randomize, 1);
   rb_define_method(cBackpropNetwork, "identity", CBackpropNetwork_identity, 0);
   rb_define_method(cBackpropNetwork, "reset", CBackpropNetwork_reset, 0);
+  rb_define_method(cBackpropNetwork, "round", CBackpropNetwork_round, 0);
   rb_define_method(cBackpropNetwork, "prune", CBackpropNetwork_prune, 1);
   rb_define_method(cBackpropNetwork, "stats", CBackpropNetwork_get_stats, 0);
   rb_define_method(cBackpropNetwork, "to_hash", CBackpropNetwork_to_hash, 0);
