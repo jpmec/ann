@@ -2724,7 +2724,7 @@ static VALUE CBackpropEvolver_new(VALUE klass)
 //------------------------------------------------------------------------------
 
 // The initialization method for this module
-void Init_cbackproprb()
+void Init_backproprb()
 {
   BACKPROP_TRACE(__FUNCTION__);
   // configure Backprop libary
