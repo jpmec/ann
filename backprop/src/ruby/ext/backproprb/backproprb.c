@@ -839,9 +839,11 @@ static VALUE CBackpropNetwork_activate(VALUE self, VALUE input)
   BackpropNetwork_t* network;
   Data_Get_Struct(self, BackpropNetwork_t, network);
 
-  char* cstr_in = StringValueCStr(input);
-
-  BackpropNetwork_InputCStr(network, cstr_in);
+  // TODO CHECK IF TYPE IS STRING OR ARRAY
+  {
+    const char* cstr_in = StringValueCStr(input);
+    BackpropNetwork_InputCStr(network, cstr_in);
+  }
 
   BackpropNetwork_Activate(network);
 
@@ -850,9 +852,6 @@ static VALUE CBackpropNetwork_activate(VALUE self, VALUE input)
   memset(cstr_out, 0, len);
 
   BackpropNetwork_GetOutputCStr(network, cstr_out, len);
-
-  printf("output = %s\n", cstr_out);
-
   VALUE return_value = rb_str_new2(cstr_out);
 
   free(cstr_out);
@@ -988,6 +987,8 @@ static VALUE CBackpropNetwork_get_layer(VALUE self, VALUE index_val)
 
   return tdata;
 }
+
+
 
 
 static VALUE CBackpropNetwork_get_jitter(VALUE self)

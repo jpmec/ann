@@ -1034,12 +1034,11 @@ BACKPROP_SIZE_T BackpropNetwork_GetOutput(const struct BackpropNetwork* self, BA
   BACKPROP_ASSERT(self);
   BACKPROP_ASSERT(values);
   BACKPROP_ASSERT(values_size);
-  BACKPROP_ASSERT(values_size <= self->y.size);
   {
     const BACKPROP_BYTE_T* data = self->y.data;
     const BACKPROP_SIZE_T y_size = self->y.size;
 
-    BACKPROP_SIZE_T i = y_size;
+    BACKPROP_SIZE_T i = (y_size < values_size) ? y_size : values_size;
     do
     {
       *values = *data;
