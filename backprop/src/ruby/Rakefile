@@ -23,3 +23,20 @@ end
 
 # feed the ExtensionTask with your spec
 Rake::ExtensionTask.new('backproprb', spec)
+
+
+task :default do
+  
+  `gem uninstall backproprb`
+
+  `rake clobber`
+  `rake compile`
+  `rake gem`
+  `rake package`
+
+  `gem install pkg/backproprb`
+
+  `ruby test/test_backproprb.rb`
+
+end
+
