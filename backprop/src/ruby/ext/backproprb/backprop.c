@@ -42,6 +42,29 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 #define BACKPROP_MIN_GOLD    (0.3819660113)
 
 
+#define USE_BACKPROP_TRACE
+
+#ifdef USE_BACKPROP_TRACE
+#include <stdio.h>
+#define BACKPROP_TRACE()    printf("%s:%d\t%s\n", __FILE__, __LINE__, __FUNCTION__)
+#define BACKPROP_TRACE_END()
+#else
+#define BACKPROP_TRACE()
+#define BACKPROP_TRACE_END()
+#endif
+
+
+
+#define USE_BACKPROP_DEBUG_PRINTF
+
+#ifdef USE_BACKPROP_DEBUG_PRINTF
+#include <stdio.h>
+#define BACKPROP_DEBUG_PRINTF(_fmt_, ...)    printf(_fmt_, ...)
+#else
+#define BACKPROP_DEBUG_PRINTF(_fmt_, ...)
+#endif
+
+
 
 
 /***************************************************************
@@ -73,6 +96,8 @@ static Backprop_t Backprop;
 
 void Backprop_SetMalloc(void* (*f) (size_t))
 {
+  BACKPROP_TRACE();
+
   Backprop.onMalloc = f;
 }
 
@@ -81,6 +106,8 @@ void Backprop_SetMalloc(void* (*f) (size_t))
 
 void Backprop_SetFree(void (*f) (void*))
 {
+  BACKPROP_TRACE();
+
   Backprop.onFree = f;
 }
 
@@ -89,6 +116,8 @@ void Backprop_SetFree(void (*f) (void*))
 
 BACKPROP_FLOAT_T Backprop_Sigmoid(BACKPROP_FLOAT_T x)
 {
+  BACKPROP_TRACE();
+
   return 1.0 / (1.0 + ((BACKPROP_FLOAT_T) exp(-x)));  // the sigmoid function
 }
 
@@ -97,6 +126,8 @@ BACKPROP_FLOAT_T Backprop_Sigmoid(BACKPROP_FLOAT_T x)
 
 void Backprop_RandomSeed(unsigned long seed)
 {
+  BACKPROP_TRACE();
+
   srand((unsigned int) seed);
 }
 
@@ -105,6 +136,8 @@ void Backprop_RandomSeed(unsigned long seed)
 
 void Backprop_RandomSeedTime(void)
 {
+  BACKPROP_TRACE();
+
   Backprop_RandomSeed(time(NULL));
 }
 
@@ -113,6 +146,8 @@ void Backprop_RandomSeedTime(void)
 
 int Backprop_UniformRandomInt(void)
 {
+  BACKPROP_TRACE();
+
   return rand();
 }
 
@@ -121,6 +156,8 @@ int Backprop_UniformRandomInt(void)
 
 BACKPROP_FLOAT_T Backprop_UniformRandomFloat(void)
 {
+  BACKPROP_TRACE();
+
   const double x = rand();
   return (BACKPROP_FLOAT_T)(x / RAND_MAX);
 }
@@ -130,6 +167,8 @@ BACKPROP_FLOAT_T Backprop_UniformRandomFloat(void)
 
 static void* Backprop_Malloc(size_t size)
 {
+  BACKPROP_TRACE();
+
   void* ptr = NULL;
 
   if (Backprop.onMalloc)
@@ -140,8 +179,9 @@ static void* Backprop_Malloc(size_t size)
   else
   {
     ptr = malloc(size);    // malloc the memory
-    memset(ptr, 0, size);  // set memory to zero, not necessary but helps track down bugs...
   }
+
+
 
   if (!ptr)
   {
@@ -153,6 +193,9 @@ static void* Backprop_Malloc(size_t size)
   else
   {
     Backprop.malloc_total += size;
+
+    printf("malloc/free = %ld/%ld, ptr = %p\n", Backprop.malloc_total, Backprop.free_total, ptr);
+    memset(ptr, 0, size);  // set memory to zero, not necessary but helps track down bugs...
   }
 
   return ptr;
@@ -163,7 +206,11 @@ static void* Backprop_Malloc(size_t size)
 
 static void Backprop_Free(void* ptr, size_t size)
 {
+  BACKPROP_TRACE();
+
   Backprop.free_total += size;
+
+  printf("malloc/free = %ld/%ld, ptr = %p\n", Backprop.malloc_total, Backprop.free_total, ptr);
 
   if (Backprop.onFree)
   {
@@ -179,6 +226,8 @@ static void Backprop_Free(void* ptr, size_t size)
 
 void Backprop_SetOnMallocFail(void (*f) (size_t))
 {
+  BACKPROP_TRACE();
+
   Backprop.onMallocFail = f;
 }
 
@@ -187,6 +236,8 @@ void Backprop_SetOnMallocFail(void (*f) (size_t))
 
 size_t Backprop_GetMallocTotal(void)
 {
+  BACKPROP_TRACE();
+
   return Backprop.malloc_total;
 }
 
@@ -195,6 +246,8 @@ size_t Backprop_GetMallocTotal(void)
 
 size_t Backprop_GetFreeTotal(void)
 {
+  BACKPROP_TRACE();
+
   return Backprop.free_total;
 }
 
@@ -203,6 +256,8 @@ size_t Backprop_GetFreeTotal(void)
 
 size_t Backprop_GetMallocInUse(void)
 {
+  BACKPROP_TRACE();
+
   return Backprop.malloc_total - Backprop.free_total;
 }
 
@@ -211,6 +266,8 @@ size_t Backprop_GetMallocInUse(void)
 
 void Backprop_ResetTotals(void)
 {
+  BACKPROP_TRACE();
+
   Backprop.malloc_total = 0;
   Backprop.free_total = 0;
 }
@@ -220,6 +277,8 @@ void Backprop_ResetTotals(void)
 
 static BackpropByteArray_t BackpropByteArray_Malloc(size_t size)
 {
+  BACKPROP_TRACE();
+
   BackpropByteArray_t array;
   array.size = size;
 
@@ -233,6 +292,8 @@ static BackpropByteArray_t BackpropByteArray_Malloc(size_t size)
 
 static void BackpropByteArray_Free(BackpropByteArray_t array)
 {
+  BACKPROP_TRACE();
+
   Backprop_Free(array.data, array.size);
 }
 
@@ -248,8 +309,32 @@ static void BackpropByteArray_Free(BackpropByteArray_t array)
 #pragma mark BackpropLayer
 
 
+/**
+ * Backprop Layer structure.
+ *
+ * y = sig(W * x)
+ *
+ */
+struct BackpropLayer
+{
+	BACKPROP_SIZE_T x_count; ///< Number of inputs to each neuron (M).
+	BACKPROP_SIZE_T y_count; ///< Number of neurons in the layer (N).
+
+	BACKPROP_FLOAT_T* W; ///< Pointer to weight matrix  [NxM].
+	BACKPROP_FLOAT_T* g; ///< Pointer to layer gradient [Nx1].
+
+	BACKPROP_FLOAT_T* x; ///< Pointer to layer input    [Mx1].
+	BACKPROP_FLOAT_T* y; ///< Pointer to layer output   [Nx1].
+
+};
+
+
+
+
 static size_t BackpropLayer_x_MallocSize(BACKPROP_SIZE_T x_count, BACKPROP_SIZE_T y_count)
 {
+  BACKPROP_TRACE();
+
   return x_count * sizeof(BACKPROP_FLOAT_T);
 }
 
@@ -258,6 +343,8 @@ static size_t BackpropLayer_x_MallocSize(BACKPROP_SIZE_T x_count, BACKPROP_SIZE_
 
 static size_t BackpropLayer_W_MallocSize(BACKPROP_SIZE_T x_count, BACKPROP_SIZE_T y_count)
 {
+  BACKPROP_TRACE();
+
   return x_count * y_count * sizeof(BACKPROP_FLOAT_T);
 }
 
@@ -266,6 +353,8 @@ static size_t BackpropLayer_W_MallocSize(BACKPROP_SIZE_T x_count, BACKPROP_SIZE_
 
 static size_t BackpropLayer_y_MallocSize(BACKPROP_SIZE_T x_count, BACKPROP_SIZE_T y_count)
 {
+  BACKPROP_TRACE();
+
   return y_count * sizeof(BACKPROP_FLOAT_T);
 }
 
@@ -274,6 +363,8 @@ static size_t BackpropLayer_y_MallocSize(BACKPROP_SIZE_T x_count, BACKPROP_SIZE_
 
 static size_t BackpropLayer_g_MallocSize(BACKPROP_SIZE_T x_count, BACKPROP_SIZE_T y_count)
 {
+  BACKPROP_TRACE();
+
   // g is same length as output y
   return y_count * sizeof(BACKPROP_FLOAT_T);
 }
@@ -283,6 +374,8 @@ static size_t BackpropLayer_g_MallocSize(BACKPROP_SIZE_T x_count, BACKPROP_SIZE_
 
 static size_t BackpropLayer_MallocInternalSize(BACKPROP_SIZE_T x_count, BACKPROP_SIZE_T y_count)
 {
+  BACKPROP_TRACE();
+
   return   BackpropLayer_x_MallocSize(x_count, y_count)
   + BackpropLayer_W_MallocSize(x_count, y_count)
   + BackpropLayer_y_MallocSize(x_count, y_count)
@@ -294,6 +387,8 @@ static size_t BackpropLayer_MallocInternalSize(BACKPROP_SIZE_T x_count, BACKPROP
 
 static size_t BackpropLayer_MallocSize(BACKPROP_SIZE_T x_count, BACKPROP_SIZE_T y_count)
 {
+  BACKPROP_TRACE();
+
   return sizeof(struct BackpropLayer) + BackpropLayer_MallocInternalSize(x_count, y_count);
 }
 
@@ -302,19 +397,26 @@ static size_t BackpropLayer_MallocSize(BACKPROP_SIZE_T x_count, BACKPROP_SIZE_T 
 
 static void BackpropLayer_MallocInternal(BackpropLayer_t* self, BACKPROP_SIZE_T x_count, BACKPROP_SIZE_T y_count)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(self);
   BACKPROP_ASSERT(x_count);
   BACKPROP_ASSERT(y_count);
 
-  self->x = Backprop_Malloc(BackpropLayer_x_MallocSize(x_count, y_count));
+  const BACKPROP_SIZE_T x_size = BackpropLayer_x_MallocSize(x_count, y_count);
+  self->x = Backprop_Malloc(x_size);
   self->x_count = x_count;
 
-  self->W = Backprop_Malloc(BackpropLayer_W_MallocSize(x_count, y_count));
+  const BACKPROP_SIZE_T W_size = BackpropLayer_W_MallocSize(x_count, y_count);
+  self->W = Backprop_Malloc(W_size);
 
-  self->y = Backprop_Malloc(BackpropLayer_y_MallocSize(x_count, y_count));
+  const BACKPROP_SIZE_T y_size = BackpropLayer_y_MallocSize(x_count, y_count);
+  self->y = Backprop_Malloc(y_size);
   self->y_count = y_count;
 
-  self->g = Backprop_Malloc(BackpropLayer_g_MallocSize(x_count, y_count));
+  const BACKPROP_SIZE_T g_size = BackpropLayer_g_MallocSize(x_count, y_count);
+  self->g = Backprop_Malloc(g_size);
+
 }
 
 
@@ -322,13 +424,35 @@ static void BackpropLayer_MallocInternal(BackpropLayer_t* self, BACKPROP_SIZE_T 
 
 static void BackpropLayer_FreeInternal(BackpropLayer_t* layer)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(layer);
 
-  Backprop_Free(layer->x, BackpropLayer_x_MallocSize(layer->x_count, layer->y_count));
-  Backprop_Free(layer->y, BackpropLayer_y_MallocSize(layer->x_count, layer->y_count));
+  if (!layer)
+  {
+    printf("no layer\n");
+    return;
+  }
 
-  Backprop_Free(layer->W, BackpropLayer_W_MallocSize(layer->x_count, layer->y_count));
-  Backprop_Free(layer->g, BackpropLayer_g_MallocSize(layer->x_count, layer->y_count));
+  printf("calculating\n");
+
+  const size_t x_count = layer->x_count;
+  const size_t y_count = layer->y_count;
+
+  printf("%ld, %ld\n", x_count, y_count);
+
+  const size_t x_size = BackpropLayer_x_MallocSize(x_count, y_count);
+  const size_t y_size = BackpropLayer_y_MallocSize(x_count, y_count);
+  const size_t W_size = BackpropLayer_W_MallocSize(x_count, y_count);
+  const size_t g_size = BackpropLayer_g_MallocSize(x_count, y_count);
+
+  printf("%ld, %ld, %ld, %ld\n", x_size, y_size, W_size, g_size);
+
+  Backprop_Free(layer->x, x_size);
+  Backprop_Free(layer->y, y_size);
+
+  Backprop_Free(layer->W, W_size);
+  Backprop_Free(layer->g, g_size);
 }
 
 
@@ -336,11 +460,20 @@ static void BackpropLayer_FreeInternal(BackpropLayer_t* layer)
 
 struct BackpropLayer* BackpropLayer_Malloc(BACKPROP_SIZE_T x_size, BACKPROP_SIZE_T y_size)
 {
-    struct BackpropLayer* ptr = Backprop_Malloc(sizeof(struct BackpropLayer));
+  BACKPROP_TRACE();
 
-    BackpropLayer_MallocInternal(ptr, x_size, y_size);
+  struct BackpropLayer* ptr = Backprop_Malloc(sizeof(struct BackpropLayer));
 
-    return ptr;
+  printf("malloc layer = %p\n", ptr);
+  printf("malloc layer x_count = %ld\n", ptr->x_count);
+  printf("malloc layer y_count = %ld\n", ptr->y_count);
+
+  BackpropLayer_MallocInternal(ptr, x_size, y_size);
+
+  printf("malloc layer x_count = %ld\n", ptr->x_count);
+  printf("malloc layer y_count = %ld\n", ptr->y_count);
+
+  return ptr;
 }
 
 
@@ -348,7 +481,11 @@ struct BackpropLayer* BackpropLayer_Malloc(BACKPROP_SIZE_T x_size, BACKPROP_SIZE
 
 void BackpropLayer_Free(struct BackpropLayer* layer)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(layer);
+
+  printf("layer = %p\n", layer);
 
   BackpropLayer_FreeInternal(layer);
   Backprop_Free(layer, sizeof(struct BackpropLayer));
@@ -357,8 +494,126 @@ void BackpropLayer_Free(struct BackpropLayer* layer)
 
 
 
-static BACKPROP_SIZE_T BackpropLayer_WeightCount(const BackpropLayer_t* self)
+BACKPROP_SIZE_T BackpropLayer_GetXCount(const struct BackpropLayer* self)
 {
+  BACKPROP_TRACE();
+  BACKPROP_ASSERT(self);
+  return self->x_count;
+}
+
+
+
+
+BACKPROP_FLOAT_T BackpropLayer_GetX(const struct BackpropLayer* self, size_t i)
+{
+  BACKPROP_TRACE();
+  BACKPROP_ASSERT(self);
+  return self->x[i];
+}
+
+
+
+
+void BackpropLayer_SetAtX(struct BackpropLayer* self, BACKPROP_SIZE_T i, BACKPROP_FLOAT_T value)
+{
+  BACKPROP_TRACE();
+  BACKPROP_ASSERT(self);
+  self->x[i] = value;
+}
+
+
+
+
+BACKPROP_SIZE_T BackpropLayer_GetYCount(const struct BackpropLayer* self)
+{
+  BACKPROP_TRACE();
+  BACKPROP_ASSERT(self);
+  return self->y_count;
+}
+
+
+
+
+BACKPROP_FLOAT_T BackpropLayer_GetY(const struct BackpropLayer* self, size_t i)
+{
+  BACKPROP_TRACE();
+  BACKPROP_ASSERT(self);
+  return self->y[i];
+}
+
+
+
+
+void BackpropLayer_SetAtY(struct BackpropLayer* self, size_t i, BACKPROP_FLOAT_T value)
+{
+  BACKPROP_TRACE();
+  BACKPROP_ASSERT(self);
+  self->y[i] = value;
+}
+
+
+
+
+BACKPROP_FLOAT_T BackpropLayer_GetAtG(const struct BackpropLayer* self, size_t i)
+{
+  BACKPROP_TRACE();
+  BACKPROP_ASSERT(self);
+  return self->g[i];
+}
+
+
+
+
+void BackpropLayer_SetAtG(const struct BackpropLayer* self, size_t i, BACKPROP_FLOAT_T value)
+{
+  BACKPROP_TRACE();
+  BACKPROP_ASSERT(self);
+  self->g[i] = value;
+}
+
+
+
+
+BACKPROP_FLOAT_T BackpropLayer_GetAtW(const struct BackpropLayer* self, BACKPROP_SIZE_T i)
+{
+  BACKPROP_TRACE();
+  BACKPROP_ASSERT(self);
+  return self->W[i];
+}
+
+
+void BackpropLayer_SetAtW(struct BackpropLayer* self, size_t i, BACKPROP_FLOAT_T value)
+{
+  BACKPROP_TRACE();
+  BACKPROP_ASSERT(self);
+  self->W[i] = value;
+}
+
+
+
+BACKPROP_FLOAT_T* BackpropLayer_GetW(struct BackpropLayer* self)
+{
+  BACKPROP_TRACE();
+  BACKPROP_ASSERT(self);
+  return self->W;
+}
+
+
+
+const BACKPROP_FLOAT_T* BackpropLayer_GetConstW(const struct BackpropLayer* self)
+{
+  BACKPROP_TRACE();
+  BACKPROP_ASSERT(self);
+  return self->W;
+}
+
+
+
+
+BACKPROP_SIZE_T BackpropLayer_WeightCount(const BackpropLayer_t* self)
+{
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(self);
   return self->x_count * self->y_count;
 }
@@ -370,6 +625,8 @@ static BACKPROP_SIZE_T BackpropLayer_WeightCount(const BackpropLayer_t* self)
  */
 BACKPROP_FLOAT_T BackpropLayer_RandomWeight(void)
 {
+  BACKPROP_TRACE();
+
   return 2.0 * Backprop_UniformRandomFloat() - 1.0;
 }
 
@@ -378,6 +635,8 @@ BACKPROP_FLOAT_T BackpropLayer_RandomWeight(void)
 
 BACKPROP_SIZE_T Backprop_RandomArrayIndex(size_t lower, size_t upper)
 {
+  BACKPROP_TRACE();
+
   if (lower >= upper)
   {
     return lower;
@@ -401,6 +660,8 @@ BACKPROP_SIZE_T Backprop_RandomArrayIndex(size_t lower, size_t upper)
 
 static int BackpropLayer_IsSimilar(const BackpropLayer_t* self, const BackpropLayer_t* other)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(self);
   BACKPROP_ASSERT(other);
 
@@ -417,6 +678,8 @@ static int BackpropLayer_IsSimilar(const BackpropLayer_t* self, const BackpropLa
 
 static void BackpropLayer_DeepCopy(const BackpropLayer_t* self, BackpropLayer_t* dest)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(self);
   BACKPROP_ASSERT(dest);
 
@@ -429,8 +692,10 @@ static void BackpropLayer_DeepCopy(const BackpropLayer_t* self, BackpropLayer_t*
 
 
 
-static void BackpropLayer_Randomize(BackpropLayer_t* self, BACKPROP_FLOAT_T gain)
+void BackpropLayer_Randomize(BackpropLayer_t* self, BACKPROP_FLOAT_T gain)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(self);
   {
     size_t count = BackpropLayer_WeightCount(self);
@@ -449,8 +714,10 @@ static void BackpropLayer_Randomize(BackpropLayer_t* self, BACKPROP_FLOAT_T gain
 
 
 
-static void BackpropLayer_Identity(BackpropLayer_t* self)
+void BackpropLayer_Identity(BackpropLayer_t* self)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(self);
   {
     BACKPROP_FLOAT_T* W = self->W;
@@ -472,8 +739,10 @@ static void BackpropLayer_Identity(BackpropLayer_t* self)
 
 
 
-static void BackpropLayer_Prune(BackpropLayer_t* self, BACKPROP_FLOAT_T threshold)
+void BackpropLayer_Prune(BackpropLayer_t* self, BACKPROP_FLOAT_T threshold)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(self);
   {
     size_t count = BackpropLayer_WeightCount(self);
@@ -495,8 +764,10 @@ static void BackpropLayer_Prune(BackpropLayer_t* self, BACKPROP_FLOAT_T threshol
 
 
 
-static void BackpropLayer_Round(BackpropLayer_t* self)
+void BackpropLayer_Round(BackpropLayer_t* self)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(self);
   {
     size_t count = BackpropLayer_WeightCount(self);
@@ -514,13 +785,16 @@ static void BackpropLayer_Round(BackpropLayer_t* self)
 
 
 
-static void BackpropLayer_Reset(BackpropLayer_t* self)
+void BackpropLayer_Reset(BackpropLayer_t* self)
 {
-  BACKPROP_ASSERT(self);
+  BACKPROP_TRACE();
 
-  memset(self->x, 0, self->x_count * sizeof(BACKPROP_FLOAT_T));
-  memset(self->y, 0, self->y_count * sizeof(BACKPROP_FLOAT_T));
-  memset(self->g, 0, self->y_count * sizeof(BACKPROP_FLOAT_T));
+  BACKPROP_ASSERT(self);
+  {
+    memset(self->x, 0, self->x_count * sizeof(BACKPROP_FLOAT_T));
+    memset(self->y, 0, self->y_count * sizeof(BACKPROP_FLOAT_T));
+    memset(self->g, 0, self->y_count * sizeof(BACKPROP_FLOAT_T));
+  }
 }
 
 
@@ -528,6 +802,8 @@ static void BackpropLayer_Reset(BackpropLayer_t* self)
 
 static void BackpropLayer_Input(BackpropLayer_t* self, const BACKPROP_FLOAT_T* values, BACKPROP_SIZE_T values_size)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(self);
   BACKPROP_ASSERT(values);
   BACKPROP_ASSERT(values_size);
@@ -545,8 +821,10 @@ static void BackpropLayer_Input(BackpropLayer_t* self, const BACKPROP_FLOAT_T* v
 
 
 
-static void BackpropLayer_Activate(BackpropLayer_t* self)
+void BackpropLayer_Activate(BackpropLayer_t* self)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(self);
   {
     size_t y_count = self->y_count;
@@ -591,6 +869,8 @@ static void BackpropLayer_Activate(BackpropLayer_t* self)
 
 static void BackpropLayer_WeightedGradient(const BackpropLayer_t* l, BACKPROP_FLOAT_T* Wg)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(l);
   BACKPROP_ASSERT(Wg);
 
@@ -608,8 +888,10 @@ static void BackpropLayer_WeightedGradient(const BackpropLayer_t* l, BACKPROP_FL
 
 
 
-static BACKPROP_SIZE_T BackpropLayer_GetWeightsCount(const BackpropLayer_t* self)
+BACKPROP_SIZE_T BackpropLayer_GetWeightsCount(const BackpropLayer_t* self)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(self);
 
   return self->x_count * self->y_count;
@@ -620,34 +902,39 @@ static BACKPROP_SIZE_T BackpropLayer_GetWeightsCount(const BackpropLayer_t* self
 
 static BACKPROP_SIZE_T BackpropLayer_GetWeightsSize(const BackpropLayer_t* self)
 {
+  BACKPROP_TRACE();
+
   return BackpropLayer_GetWeightsCount(self) * sizeof(BACKPROP_FLOAT_T);
 }
 
 
 
 
-static BACKPROP_FLOAT_T BackpropLayer_GetWeightsSum(const BackpropLayer_t* self)
+BACKPROP_FLOAT_T BackpropLayer_GetWeightsSum(const BackpropLayer_t* self)
 {
-  BACKPROP_FLOAT_T sum = 0.0;
-
-  BACKPROP_SIZE_T count = BackpropLayer_GetWeightsCount(self);
-
-  BACKPROP_FLOAT_T* w = self->W;
-
-  do
+  BACKPROP_TRACE();
   {
-    sum += *w;
-    ++w;
-  } while (--count);
+    BACKPROP_FLOAT_T sum = 0.0;
+    BACKPROP_SIZE_T count = BackpropLayer_GetWeightsCount(self);
+    BACKPROP_FLOAT_T* w = self->W;
 
-  return sum;
+    do
+    {
+      sum += *w;
+      ++w;
+    } while (--count);
+
+    return sum;
+  }
 }
 
 
 
 
-static BACKPROP_FLOAT_T BackpropLayer_GetWeightsMean(const BackpropLayer_t* self)
+BACKPROP_FLOAT_T BackpropLayer_GetWeightsMean(const BackpropLayer_t* self)
 {
+  BACKPROP_TRACE();
+
   const BACKPROP_FLOAT_T sum = BackpropLayer_GetWeightsSum(self);
   const BACKPROP_SIZE_T count = BackpropLayer_GetWeightsCount(self);
 
@@ -657,8 +944,10 @@ static BACKPROP_FLOAT_T BackpropLayer_GetWeightsMean(const BackpropLayer_t* self
 
 
 
-static BACKPROP_FLOAT_T BackpropLayer_GetWeightsStdDev(const BackpropLayer_t* self)
+BACKPROP_FLOAT_T BackpropLayer_GetWeightsStdDev(const BackpropLayer_t* self)
 {
+  BACKPROP_TRACE();
+
   const BACKPROP_SIZE_T count = BackpropLayer_GetWeightsCount(self);
 
   if (0 == count)
@@ -689,8 +978,10 @@ static BACKPROP_FLOAT_T BackpropLayer_GetWeightsStdDev(const BackpropLayer_t* se
 
 
 
-static BACKPROP_SIZE_T BackpropLayer_GetSize(const BackpropLayer_t* self)
+BACKPROP_SIZE_T BackpropLayer_GetSize(const BackpropLayer_t* self)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(self);
 
   return BackpropLayer_MallocSize(self->x_count, self->y_count);
@@ -698,6 +989,40 @@ static BACKPROP_SIZE_T BackpropLayer_GetSize(const BackpropLayer_t* self)
 
 
 
+
+/*-------------------------------------------------------------------*
+ *
+ * BackpropLayersArray
+ *
+ *-------------------------------------------------------------------*/
+
+
+size_t BackpropLayersArray_GetCount(const struct BackpropLayersArray* self)
+{
+  BACKPROP_TRACE();
+  BACKPROP_ASSERT(self);
+
+  return self->count;
+}
+
+
+
+
+struct BackpropLayer* BackpropLayersArray_GetLayer(struct BackpropLayersArray* self, size_t i)
+{
+  BACKPROP_TRACE();
+  BACKPROP_ASSERT(self);
+
+  return self->data + i;
+}
+
+
+
+
+const struct BackpropLayer* BackpropLayersArray_GetConstLayer(const struct BackpropLayersArray* self, size_t i)
+{
+  return BackpropLayersArray_GetLayer((struct BackpropLayersArray*) self, i);
+}
 
 
 
@@ -729,6 +1054,8 @@ struct BackpropNetwork
 
 int BackpropNetwork_IsValid(const struct BackpropNetwork* self)
 {
+  BACKPROP_TRACE();
+
   return    (0 != self)
          && (0 < BackpropNetwork_GetXSize(self))
          && (0 < BackpropNetwork_GetYSize(self));
@@ -740,6 +1067,8 @@ int BackpropNetwork_IsValid(const struct BackpropNetwork* self)
 
 const BackpropByteArray_t* BackpropNetwork_GetX(const struct BackpropNetwork* self)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(self);
 
   return &self->x;
@@ -750,6 +1079,8 @@ const BackpropByteArray_t* BackpropNetwork_GetX(const struct BackpropNetwork* se
 
 BACKPROP_SIZE_T BackpropNetwork_GetXSize(const struct BackpropNetwork* self)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(self);
 
   return self->x.size;
@@ -760,6 +1091,8 @@ BACKPROP_SIZE_T BackpropNetwork_GetXSize(const struct BackpropNetwork* self)
 
 const BackpropByteArray_t* BackpropNetwork_GetY(const struct BackpropNetwork* self)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(self);
 
   return &self->y;
@@ -770,6 +1103,8 @@ const BackpropByteArray_t* BackpropNetwork_GetY(const struct BackpropNetwork* se
 
 BACKPROP_SIZE_T BackpropNetwork_GetYSize(const struct BackpropNetwork* self)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(self);
 
   return self->y.size;
@@ -780,6 +1115,8 @@ BACKPROP_SIZE_T BackpropNetwork_GetYSize(const struct BackpropNetwork* self)
 
 const BackpropLayersArray_t* BackpropNetwork_GetLayers(const struct BackpropNetwork* self)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(self);
 
   return &self->layers;
@@ -789,6 +1126,8 @@ const BackpropLayersArray_t* BackpropNetwork_GetLayers(const struct BackpropNetw
 
 BACKPROP_SIZE_T BackpropNetwork_GetLayersCount(const struct BackpropNetwork* self)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(self);
 
   return self->layers.count;
@@ -800,6 +1139,8 @@ BACKPROP_SIZE_T BackpropNetwork_GetLayersCount(const struct BackpropNetwork* sel
 
 BACKPROP_FLOAT_T BackpropNetwork_GetJitter(const struct BackpropNetwork* self)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(self);
 
   return self->jitter;
@@ -810,6 +1151,8 @@ BACKPROP_FLOAT_T BackpropNetwork_GetJitter(const struct BackpropNetwork* self)
 
 void BackpropNetwork_SetJitter(struct BackpropNetwork* self, BACKPROP_FLOAT_T jitter)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(self);
 
   self->jitter = jitter;
@@ -820,6 +1163,8 @@ void BackpropNetwork_SetJitter(struct BackpropNetwork* self, BACKPROP_FLOAT_T ji
 
 size_t BackpropNetwork_MallocSize(BACKPROP_SIZE_T x_size, BACKPROP_SIZE_T y_size, BACKPROP_SIZE_T layers_count)
 {
+  BACKPROP_TRACE();
+
   size_t total_size = sizeof(struct BackpropNetwork)
                       + x_size * sizeof(BACKPROP_BYTE_T)
                       + y_size * sizeof(BACKPROP_BYTE_T)
@@ -847,6 +1192,8 @@ size_t BackpropNetwork_MallocSize(BACKPROP_SIZE_T x_size, BACKPROP_SIZE_T y_size
 
 struct BackpropNetwork* BackpropNetwork_Malloc(BACKPROP_SIZE_T x_size, BACKPROP_SIZE_T y_size, BACKPROP_SIZE_T layers_count, bool chain_layers)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(x_size);
   BACKPROP_ASSERT(y_size);
   BACKPROP_ASSERT(layers_count);
@@ -893,6 +1240,8 @@ struct BackpropNetwork* BackpropNetwork_Malloc(BACKPROP_SIZE_T x_size, BACKPROP_
 
 void BackpropNetwork_Free(struct BackpropNetwork* network)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(network);
 
   for (size_t i = 0; i < network->layers.count; ++i)
@@ -914,6 +1263,8 @@ void BackpropNetwork_Free(struct BackpropNetwork* network)
  */
 static void BackpropNetwork_InputToLayer0(struct BackpropNetwork* self)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(self);
   {
     // Input each bit value
@@ -946,6 +1297,8 @@ static void BackpropNetwork_InputToLayer0(struct BackpropNetwork* self)
 
 static int BackpropNetwork_IsSimilar(const struct BackpropNetwork* self, const struct BackpropNetwork* other)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(self);
   BACKPROP_ASSERT(other);
 
@@ -975,6 +1328,8 @@ static int BackpropNetwork_IsSimilar(const struct BackpropNetwork* self, const s
 
 static void BackpropNetwork_DeepCopy(const struct BackpropNetwork* self, struct BackpropNetwork* dest)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(self);
   BACKPROP_ASSERT(dest);
 
@@ -994,6 +1349,8 @@ static void BackpropNetwork_DeepCopy(const struct BackpropNetwork* self, struct 
 
 void BackpropNetwork_Input(struct BackpropNetwork* self, const BACKPROP_BYTE_T* values, BACKPROP_SIZE_T values_size)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(self);
   BACKPROP_ASSERT(values);
   BACKPROP_ASSERT(values_size);
@@ -1012,6 +1369,8 @@ void BackpropNetwork_Input(struct BackpropNetwork* self, const BACKPROP_BYTE_T* 
 
 void BackpropNetwork_InputCStr(struct BackpropNetwork* self, const char* values)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(self);
   BACKPROP_ASSERT(values);
   {
@@ -1031,6 +1390,8 @@ void BackpropNetwork_InputCStr(struct BackpropNetwork* self, const char* values)
 
 BACKPROP_SIZE_T BackpropNetwork_GetOutput(const struct BackpropNetwork* self, BACKPROP_BYTE_T* values, BACKPROP_SIZE_T values_size)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(self);
   BACKPROP_ASSERT(values);
   BACKPROP_ASSERT(values_size);
@@ -1056,6 +1417,8 @@ BACKPROP_SIZE_T BackpropNetwork_GetOutput(const struct BackpropNetwork* self, BA
 
 size_t BackpropNetwork_GetOutputCStr(const struct BackpropNetwork* self, char* str, size_t str_size)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(self);
   BACKPROP_ASSERT(str);
 
@@ -1072,6 +1435,8 @@ size_t BackpropNetwork_GetOutputCStr(const struct BackpropNetwork* self, char* s
 
 static void BackpropNetwork_ActivateLayers(struct BackpropNetwork* self)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(self);
   BACKPROP_ASSERT(self->layers.count > 0);
   {
@@ -1096,6 +1461,8 @@ static void BackpropNetwork_ActivateLayers(struct BackpropNetwork* self)
 
 BackpropLayer_t* BackpropNetwork_GetFirstLayer(struct BackpropNetwork* self)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(self);
   BACKPROP_ASSERT(self->layers.data);
   BACKPROP_ASSERT(self->layers.count);
@@ -1108,6 +1475,8 @@ BackpropLayer_t* BackpropNetwork_GetFirstLayer(struct BackpropNetwork* self)
 
 BackpropLayer_t* BackpropNetwork_GetLastLayer(struct BackpropNetwork* self)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(self);
   BACKPROP_ASSERT(self->layers.data);
   BACKPROP_ASSERT(self->layers.count);
@@ -1127,6 +1496,8 @@ BackpropLayer_t* BackpropNetwork_GetLastLayer(struct BackpropNetwork* self)
 
 const BackpropLayer_t* BackpropNetwork_GetConstLastLayer(const struct BackpropNetwork* self)
 {
+  BACKPROP_TRACE();
+
   return BackpropNetwork_GetLastLayer((struct BackpropNetwork*) self);
 }
 
@@ -1135,6 +1506,8 @@ const BackpropLayer_t* BackpropNetwork_GetConstLastLayer(const struct BackpropNe
 
 static void BackpropNetwork_LastLayerToOutput(struct BackpropNetwork* self)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(self);
   {
     const BackpropLayer_t* last_layer = BackpropNetwork_GetConstLastLayer(self);
@@ -1173,6 +1546,8 @@ static void BackpropNetwork_LastLayerToOutput(struct BackpropNetwork* self)
 
 void BackpropNetwork_Activate(struct BackpropNetwork* self)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(self);
 
   // convert byte input in to network layer input
@@ -1190,6 +1565,8 @@ void BackpropNetwork_Activate(struct BackpropNetwork* self)
 
 void BackpropNetwork_Randomize(struct BackpropNetwork* self, BACKPROP_FLOAT_T gain, unsigned int seed)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(self);
 
   Backprop_RandomSeed(seed);
@@ -1205,6 +1582,8 @@ void BackpropNetwork_Randomize(struct BackpropNetwork* self, BACKPROP_FLOAT_T ga
 
 void BackpropNetwork_Round(struct BackpropNetwork* self)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(self);
 
   for(size_t i = 0; i < self->layers.count; ++i)
@@ -1218,6 +1597,8 @@ void BackpropNetwork_Round(struct BackpropNetwork* self)
 
 void BackpropNetwork_Identity(struct BackpropNetwork* self)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(self);
 
   for(size_t i = 0; i < self->layers.count; ++i)
@@ -1231,6 +1612,8 @@ void BackpropNetwork_Identity(struct BackpropNetwork* self)
 
 void BackpropNetwork_Reset(struct BackpropNetwork* self)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(self);
 
   memset(self->x.data, 0, self->x.size);
@@ -1247,6 +1630,8 @@ void BackpropNetwork_Reset(struct BackpropNetwork* self)
 
 void BackpropNetwork_Prune(struct BackpropNetwork* self, BACKPROP_FLOAT_T threshold)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(self);
 
   for(size_t i = 0; i < self->layers.count; ++i)
@@ -1260,6 +1645,8 @@ void BackpropNetwork_Prune(struct BackpropNetwork* self, BACKPROP_FLOAT_T thresh
 
 BACKPROP_SIZE_T BackpropNetwork_GetWeightsCount(const struct BackpropNetwork* self)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_SIZE_T total_count = 0;
 
   for(size_t i = 0; i < self->layers.count; ++i)
@@ -1275,6 +1662,8 @@ BACKPROP_SIZE_T BackpropNetwork_GetWeightsCount(const struct BackpropNetwork* se
 
 BACKPROP_SIZE_T BackpropNetwork_GetWeightsSize(const struct BackpropNetwork* self)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(self);
 
   return BackpropNetwork_GetWeightsCount(self) * sizeof(BACKPROP_FLOAT_T);
@@ -1285,6 +1674,8 @@ BACKPROP_SIZE_T BackpropNetwork_GetWeightsSize(const struct BackpropNetwork* sel
 
 BACKPROP_FLOAT_T BackpropNetwork_GetWeightsSum(const struct BackpropNetwork* self)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_FLOAT_T result = 0;
 
   for(size_t i = 0; i < self->layers.count; ++i)
@@ -1300,6 +1691,8 @@ BACKPROP_FLOAT_T BackpropNetwork_GetWeightsSum(const struct BackpropNetwork* sel
 
 BACKPROP_FLOAT_T BackpropNetwork_GetWeightsMean(const struct BackpropNetwork* self)
 {
+  BACKPROP_TRACE();
+
   const BACKPROP_FLOAT_T sum = BackpropNetwork_GetWeightsSum(self);
   const BACKPROP_SIZE_T count = BackpropNetwork_GetWeightsCount(self);
 
@@ -1311,6 +1704,8 @@ BACKPROP_FLOAT_T BackpropNetwork_GetWeightsMean(const struct BackpropNetwork* se
 
 BACKPROP_FLOAT_T BackpropNetwork_GetWeightsStdDev(const struct BackpropNetwork* self)
 {
+  BACKPROP_TRACE();
+
 //  const BACKPROP_FLOAT_T mean = BackpropNetwork_GetWeightsMean(self);
 
 //  BACKPROP_FLOAT_T result = 0;
@@ -1333,6 +1728,8 @@ BACKPROP_FLOAT_T BackpropNetwork_GetWeightsStdDev(const struct BackpropNetwork* 
 
 static BACKPROP_SIZE_T BackpropNetwork_GetLayersSize(const struct BackpropNetwork* self)
 {
+  BACKPROP_TRACE();
+
   const struct BackpropLayersArray* layers = BackpropNetwork_GetLayers(self);
 
   BACKPROP_SIZE_T total_size = 0;
@@ -1351,6 +1748,8 @@ static BACKPROP_SIZE_T BackpropNetwork_GetLayersSize(const struct BackpropNetwor
 
 void BackpropNetwork_GetStats(const struct BackpropNetwork* self, BackpropNetworkStats_t* stats)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(self);
   BACKPROP_ASSERT(stats);
 
@@ -1383,6 +1782,8 @@ void BackpropNetwork_GetStats(const struct BackpropNetwork* self, BackpropNetwor
 
 BackpropTrainingSet_t* BackpropTrainingSet_Malloc(size_t count, size_t x_size, size_t y_size)
 {
+  BACKPROP_TRACE();
+
   BackpropTrainingSet_t* self = Backprop_Malloc(sizeof(BackpropTrainingSet_t));
 
   self->dims.count = count;
@@ -1408,6 +1809,8 @@ BackpropTrainingSet_t* BackpropTrainingSet_Malloc(size_t count, size_t x_size, s
 
 void BackpropTrainingSet_Free(BackpropTrainingSet_t* self)
 {
+  BACKPROP_TRACE();
+
   size_t count = self->dims.count;
   size_t x_size = self->dims.x_size;
   size_t y_size = self->dims.y_size;
@@ -1422,6 +1825,8 @@ void BackpropTrainingSet_Free(BackpropTrainingSet_t* self)
 
 size_t BackpropTrainingSet_GetXSize(BackpropTrainingSet_t* self)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(self);
 
   return self->dims.x_size;
@@ -1432,6 +1837,8 @@ size_t BackpropTrainingSet_GetXSize(BackpropTrainingSet_t* self)
 
 size_t BackpropTrainingSet_GetYSize(BackpropTrainingSet_t* self)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(self);
 
   return self->dims.y_size;
@@ -1442,6 +1849,8 @@ size_t BackpropTrainingSet_GetYSize(BackpropTrainingSet_t* self)
 
 void BackpropTrainingSet_GetPair(BackpropTrainingSet_t* self, BACKPROP_SIZE_T index, BACKPROP_BYTE_T* x, BACKPROP_BYTE_T* y)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(self);
   BACKPROP_ASSERT(x);
   BACKPROP_ASSERT(y);
@@ -1471,6 +1880,8 @@ void BackpropTrainingSet_GetPair(BackpropTrainingSet_t* self, BACKPROP_SIZE_T in
 
 void BackpropLearningAccelerator_SetToDefault(BackpropLearningAccelerator_t* self)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(self);
 
   memset(self, 0, sizeof(BackpropLearningAccelerator_t));
@@ -1485,6 +1896,8 @@ void BackpropLearningAccelerator_SetToDefault(BackpropLearningAccelerator_t* sel
 
 BACKPROP_FLOAT_T BackpropLearningAccelerator_Accelerate(BackpropLearningAccelerator_t* self, BACKPROP_FLOAT_T learning_rate, BACKPROP_FLOAT_T error_now, BACKPROP_FLOAT_T error_prev)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(self);
   BACKPROP_ASSERT(self->min_learning_rate <= self->max_learning_rate);
   {
@@ -1576,6 +1989,8 @@ struct BackpropTrainer
 
 static BACKPROP_FLOAT_T BackpropTrainer_ComputeByteError(BACKPROP_BYTE_T byte1, BACKPROP_BYTE_T byte2)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_FLOAT_T error = 0;
 
   size_t b = CHAR_BIT;
@@ -1596,6 +2011,8 @@ static BACKPROP_FLOAT_T BackpropTrainer_ComputeByteError(BACKPROP_BYTE_T byte1, 
 
 static BACKPROP_FLOAT_T BackpropTrainer_ComputeError(const struct BackpropNetwork* network, const BACKPROP_BYTE_T* yd, BACKPROP_SIZE_T yd_size)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(network);
   BACKPROP_ASSERT(yd);
   BACKPROP_ASSERT(yd_size);
@@ -1622,6 +2039,8 @@ static BACKPROP_FLOAT_T BackpropTrainer_ComputeError(const struct BackpropNetwor
 
 size_t BackpropTrainer_MallocSize(const struct BackpropNetwork* network)
 {
+  BACKPROP_TRACE();
+
   return sizeof(BackpropTrainer_t);
 }
 
@@ -1630,6 +2049,8 @@ size_t BackpropTrainer_MallocSize(const struct BackpropNetwork* network)
 
 BackpropTrainer_t* BackpropTrainer_Malloc(struct BackpropNetwork* network)
 {
+  BACKPROP_TRACE();
+
   return Backprop_Malloc(BackpropTrainer_MallocSize(network));
 }
 
@@ -1638,6 +2059,8 @@ BackpropTrainer_t* BackpropTrainer_Malloc(struct BackpropNetwork* network)
 
 void BackpropTrainer_Free(BackpropTrainer_t* trainer)
 {
+  BACKPROP_TRACE();
+
   Backprop_Free(trainer, sizeof(BackpropTrainer_t));
 }
 
@@ -1645,6 +2068,8 @@ void BackpropTrainer_Free(BackpropTrainer_t* trainer)
 
 struct BackpropTrainerEvents* BackpropTrainer_GetEvents(BackpropTrainer_t* self)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(self);
 
   return &self->events;
@@ -1655,6 +2080,8 @@ struct BackpropTrainerEvents* BackpropTrainer_GetEvents(BackpropTrainer_t* self)
 
 void BackpropTrainer_SetToDefault(BackpropTrainer_t* self)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(self);
 
   memset(self, 0, sizeof(BackpropTrainer_t));
@@ -1685,6 +2112,8 @@ void BackpropTrainer_SetToDefault(BackpropTrainer_t* self)
 
 BACKPROP_FLOAT_T BackpropTrainer_GetErrorTolerance(const struct BackpropTrainer* self)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(self);
 
   return self->error_tolerance;
@@ -1695,6 +2124,8 @@ BACKPROP_FLOAT_T BackpropTrainer_GetErrorTolerance(const struct BackpropTrainer*
 
 void BackpropTrainer_SetErrorTolerance(struct BackpropTrainer* self, BACKPROP_FLOAT_T value)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(self);
 
   self->error_tolerance = value;
@@ -1705,6 +2136,8 @@ void BackpropTrainer_SetErrorTolerance(struct BackpropTrainer* self, BACKPROP_FL
 
 BACKPROP_FLOAT_T BackpropTrainer_GetLearningRate(const struct BackpropTrainer* self)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(self);
 
   return self->learning_rate;
@@ -1715,6 +2148,8 @@ BACKPROP_FLOAT_T BackpropTrainer_GetLearningRate(const struct BackpropTrainer* s
 
 void BackpropTrainer_SetLearningRate(struct BackpropTrainer* self, BACKPROP_FLOAT_T value)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(self);
 
   self->learning_rate = value;
@@ -1725,6 +2160,8 @@ void BackpropTrainer_SetLearningRate(struct BackpropTrainer* self, BACKPROP_FLOA
 
 BACKPROP_FLOAT_T BackpropTrainer_GetMutationRate(const struct BackpropTrainer* self)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(self);
 
   return self->mutation_rate;
@@ -1735,6 +2172,8 @@ BACKPROP_FLOAT_T BackpropTrainer_GetMutationRate(const struct BackpropTrainer* s
 
 void BackpropTrainer_SetMutationRate(struct BackpropTrainer* self, BACKPROP_FLOAT_T value)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(self);
 
   self->mutation_rate = value;
@@ -1745,6 +2184,8 @@ void BackpropTrainer_SetMutationRate(struct BackpropTrainer* self, BACKPROP_FLOA
 
 BACKPROP_FLOAT_T BackpropTrainer_GetMomentumRate(const struct BackpropTrainer* self)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(self);
 
   return self->momentum_rate;
@@ -1755,6 +2196,8 @@ BACKPROP_FLOAT_T BackpropTrainer_GetMomentumRate(const struct BackpropTrainer* s
 
 void BackpropTrainer_SetMomentumRate(struct BackpropTrainer* self, BACKPROP_FLOAT_T value)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(self);
 
   self->momentum_rate = value;
@@ -1765,6 +2208,8 @@ void BackpropTrainer_SetMomentumRate(struct BackpropTrainer* self, BACKPROP_FLOA
 
 BACKPROP_SIZE_T BackpropTrainer_GetMaxReps(const struct BackpropTrainer* self)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(self);
 
   return self->max_reps;
@@ -1775,6 +2220,8 @@ BACKPROP_SIZE_T BackpropTrainer_GetMaxReps(const struct BackpropTrainer* self)
 
 void BackpropTrainer_SetMaxReps(struct BackpropTrainer* self, BACKPROP_SIZE_T value)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(self);
 
   self->max_reps = value;
@@ -1785,6 +2232,8 @@ void BackpropTrainer_SetMaxReps(struct BackpropTrainer* self, BACKPROP_SIZE_T va
 
 BACKPROP_SIZE_T BackpropTrainer_GetMaxBatchSets(const struct BackpropTrainer* self)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(self);
 
   return self->max_batch_sets;
@@ -1795,6 +2244,8 @@ BACKPROP_SIZE_T BackpropTrainer_GetMaxBatchSets(const struct BackpropTrainer* se
 
 void BackpropTrainer_SetMaxBatchSets(struct BackpropTrainer* self, BACKPROP_SIZE_T value)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(self);
 
   self->max_batch_sets = value;
@@ -1805,6 +2256,8 @@ void BackpropTrainer_SetMaxBatchSets(struct BackpropTrainer* self, BACKPROP_SIZE
 
 BACKPROP_SIZE_T BackpropTrainer_GetMaxBatches(const struct BackpropTrainer* self)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(self);
 
   return self->max_batches;
@@ -1815,6 +2268,8 @@ BACKPROP_SIZE_T BackpropTrainer_GetMaxBatches(const struct BackpropTrainer* self
 
 void BackpropTrainer_SetMaxBatches(struct BackpropTrainer* self, BACKPROP_SIZE_T value)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(self);
 
   self->max_batches = value;
@@ -1825,6 +2280,8 @@ void BackpropTrainer_SetMaxBatches(struct BackpropTrainer* self, BACKPROP_SIZE_T
 
 BACKPROP_SIZE_T BackpropTrainer_GetMaxStagnateSets(const struct BackpropTrainer* self)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(self);
 
   return self->max_stagnate_sets;
@@ -1835,6 +2292,8 @@ BACKPROP_SIZE_T BackpropTrainer_GetMaxStagnateSets(const struct BackpropTrainer*
 
 void BackpropTrainer_SetMaxStagnateSets(struct BackpropTrainer* self, BACKPROP_SIZE_T value)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(self);
 
   self->max_stagnate_sets = value;
@@ -1845,6 +2304,8 @@ void BackpropTrainer_SetMaxStagnateSets(struct BackpropTrainer* self, BACKPROP_S
 
 BACKPROP_SIZE_T BackpropTrainer_GetMaxStagnateBatches(const struct BackpropTrainer* self)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(self);
 
   return self->max_stagnate_batches;
@@ -1855,6 +2316,8 @@ BACKPROP_SIZE_T BackpropTrainer_GetMaxStagnateBatches(const struct BackpropTrain
 
 void BackpropTrainer_SetMaxStagnateBatches(struct BackpropTrainer* self, BACKPROP_SIZE_T value)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(self);
 
   self->max_stagnate_batches = value;
@@ -1865,6 +2328,8 @@ void BackpropTrainer_SetMaxStagnateBatches(struct BackpropTrainer* self, BACKPRO
 
 BACKPROP_FLOAT_T BackpropTrainer_GetMinSetWeightCorrectionLimit(const struct BackpropTrainer* self)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(self);
 
   return self->min_set_weight_correction_limit;
@@ -1875,6 +2340,8 @@ BACKPROP_FLOAT_T BackpropTrainer_GetMinSetWeightCorrectionLimit(const struct Bac
 
 void BackpropTrainer_SetMinSetWeightCorrectionLimit(struct BackpropTrainer* self, BACKPROP_FLOAT_T value)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(self);
 
   self->min_set_weight_correction_limit = value;
@@ -1885,6 +2352,8 @@ void BackpropTrainer_SetMinSetWeightCorrectionLimit(struct BackpropTrainer* self
 
 BACKPROP_FLOAT_T BackpropTrainer_GetMinBatchWeightCorrectionLimit(const struct BackpropTrainer* self)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(self);
 
   return self->min_batch_weight_correction_limit;
@@ -1895,6 +2364,8 @@ BACKPROP_FLOAT_T BackpropTrainer_GetMinBatchWeightCorrectionLimit(const struct B
 
 void BackpropTrainer_SetMinBatchWeightCorrectionLimit(struct BackpropTrainer* self, BACKPROP_FLOAT_T value)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(self);
 
   self->min_batch_weight_correction_limit = value;
@@ -1905,6 +2376,8 @@ void BackpropTrainer_SetMinBatchWeightCorrectionLimit(struct BackpropTrainer* se
 
 BACKPROP_FLOAT_T BackpropTrainer_GetTrainingRatio(const struct BackpropTrainer* self)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(self);
 
   return self->training_ratio;
@@ -1915,6 +2388,8 @@ BACKPROP_FLOAT_T BackpropTrainer_GetTrainingRatio(const struct BackpropTrainer* 
 
 void BackpropTrainer_SetTrainingRatio(struct BackpropTrainer* self, BACKPROP_FLOAT_T value)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(self);
 
   self->training_ratio = value;
@@ -1925,6 +2400,8 @@ void BackpropTrainer_SetTrainingRatio(struct BackpropTrainer* self, BACKPROP_FLO
 
 BACKPROP_FLOAT_T BackpropTrainer_GetBatchPruneThreshold(const struct BackpropTrainer* self)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(self);
 
   return self->batch_prune_threshold;
@@ -1935,6 +2412,8 @@ BACKPROP_FLOAT_T BackpropTrainer_GetBatchPruneThreshold(const struct BackpropTra
 
 void BackpropTrainer_SetBatchPruneThreshold(struct BackpropTrainer* self, BACKPROP_FLOAT_T value)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(self);
 
   self->batch_prune_threshold = value;
@@ -1945,6 +2424,8 @@ void BackpropTrainer_SetBatchPruneThreshold(struct BackpropTrainer* self, BACKPR
 
 BACKPROP_FLOAT_T BackpropTrainer_GetStagnateTolerance(const struct BackpropTrainer* self)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(self);
 
   return self->stagnate_tolerance;
@@ -1955,6 +2436,8 @@ BACKPROP_FLOAT_T BackpropTrainer_GetStagnateTolerance(const struct BackpropTrain
 
 void BackpropTrainer_SetStagnateTolerance(struct BackpropTrainer* self, BACKPROP_FLOAT_T value)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(self);
 
   self->stagnate_tolerance = value;
@@ -1965,6 +2448,8 @@ void BackpropTrainer_SetStagnateTolerance(struct BackpropTrainer* self, BACKPROP
 
 BACKPROP_FLOAT_T BackpropTrainer_GetBatchPruneRate(const struct BackpropTrainer* self)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(self);
 
   return self->batch_prune_rate;
@@ -1975,6 +2460,8 @@ BACKPROP_FLOAT_T BackpropTrainer_GetBatchPruneRate(const struct BackpropTrainer*
 
 void BackpropTrainer_SetBatchPruneRate(struct BackpropTrainer* self, BACKPROP_FLOAT_T value)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(self);
 
   self->batch_prune_rate = value;
@@ -1985,6 +2472,8 @@ void BackpropTrainer_SetBatchPruneRate(struct BackpropTrainer* self, BACKPROP_FL
 
 BACKPROP_FLOAT_T BackpropTrainer_ExerciseConst(BackpropTrainer_t* trainer, BackpropExerciseStats_t* stats, struct BackpropNetwork* network, const BackpropConstTrainingSet_t* training_set)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(trainer);
   BACKPROP_ASSERT(stats);
   BACKPROP_ASSERT(network);
@@ -2040,6 +2529,8 @@ BACKPROP_FLOAT_T BackpropTrainer_ExerciseConst(BackpropTrainer_t* trainer, Backp
 
 BACKPROP_FLOAT_T BackpropTrainer_Exercise(BackpropTrainer_t* trainer, BackpropExerciseStats_t* stats, struct BackpropNetwork* network, const BackpropTrainingSet_t* training_set)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(trainer);
   BACKPROP_ASSERT(stats);
   BACKPROP_ASSERT(network);
@@ -2058,11 +2549,13 @@ BACKPROP_FLOAT_T BackpropTrainer_Exercise(BackpropTrainer_t* trainer, BackpropEx
 
 
 
-static BACKPROP_FLOAT_T BackpropTrainer_TeachPair( BackpropTrainer_t* trainer, BackpropTrainingStats_t* stats
-                                                 , struct BackpropNetwork* network
-                                                 , const BACKPROP_BYTE_T* x, BACKPROP_SIZE_T x_size
-                                                 , const BACKPROP_BYTE_T* y_desired, BACKPROP_SIZE_T y_desired_size)
+BACKPROP_FLOAT_T BackpropTrainer_TeachPair( BackpropTrainer_t* trainer, BackpropTrainingStats_t* stats
+                                          , struct BackpropNetwork* network
+                                          , const BACKPROP_BYTE_T* x, BACKPROP_SIZE_T x_size
+                                          , const BACKPROP_BYTE_T* y_desired, BACKPROP_SIZE_T y_desired_size)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(trainer);
   BACKPROP_ASSERT(network);
   BACKPROP_ASSERT(x);
@@ -2249,6 +2742,8 @@ BACKPROP_FLOAT_T BackpropTrainer_TrainPair( BackpropTrainer_t* trainer
                                           , const BACKPROP_BYTE_T* x, BACKPROP_SIZE_T x_size
                                           , const BACKPROP_BYTE_T* y_desired, BACKPROP_SIZE_T y_desired_size)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(trainer);
   BACKPROP_ASSERT(stats);
   BACKPROP_ASSERT(network);
@@ -2287,11 +2782,13 @@ BACKPROP_FLOAT_T BackpropTrainer_TrainPair( BackpropTrainer_t* trainer
 
 
 
-static BACKPROP_FLOAT_T BackpropTrainer_TrainSet( BackpropTrainer_t* trainer
-                                                , BackpropTrainingStats_t* stats
-                                                , struct BackpropNetwork* network
-                                                , const BackpropTrainingSet_t* training_set)
+BACKPROP_FLOAT_T BackpropTrainer_TrainSet( BackpropTrainer_t* trainer
+                                         , BackpropTrainingStats_t* stats
+                                         , struct BackpropNetwork* network
+                                         , const BackpropTrainingSet_t* training_set)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(trainer);
   BACKPROP_ASSERT(network);
   BACKPROP_ASSERT(training_set);
@@ -2351,12 +2848,14 @@ static BACKPROP_FLOAT_T BackpropTrainer_TrainSet( BackpropTrainer_t* trainer
 
 
 
-static BACKPROP_FLOAT_T BackpropTrainer_TrainBatch( BackpropTrainer_t* trainer
-                                                  , BackpropTrainingStats_t* stats
-                                                  , BackpropExerciseStats_t* exercise_stats
-                                                  , struct BackpropNetwork* network
-                                                  , const BackpropTrainingSet_t* training_set)
+BACKPROP_FLOAT_T BackpropTrainer_TrainBatch( BackpropTrainer_t* trainer
+                                           , BackpropTrainingStats_t* stats
+                                           , BackpropExerciseStats_t* exercise_stats
+                                           , struct BackpropNetwork* network
+                                           , const BackpropTrainingSet_t* training_set)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(trainer);
   BACKPROP_ASSERT(network);
   BACKPROP_ASSERT(training_set);
@@ -2468,6 +2967,8 @@ BACKPROP_FLOAT_T BackpropTrainer_Train( BackpropTrainer_t* trainer
                                       , struct BackpropNetwork* network
                                       , const BackpropTrainingSet_t* training_set)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(trainer);
   BACKPROP_ASSERT(stats);
   BACKPROP_ASSERT(network);
@@ -2614,6 +3115,8 @@ BACKPROP_FLOAT_T BackpropTrainer_Train( BackpropTrainer_t* trainer
 
 void BackpropTrainer_Prune(BackpropTrainer_t* trainer, struct BackpropNetwork* network, BACKPROP_FLOAT_T threshold)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(trainer);
   BACKPROP_ASSERT(network);
 
@@ -2625,6 +3128,8 @@ void BackpropTrainer_Prune(BackpropTrainer_t* trainer, struct BackpropNetwork* n
 
 static struct BackpropNetwork** BackpropNetwork_MallocPool(BACKPROP_SIZE_T x_size, BACKPROP_SIZE_T y_size, BACKPROP_SIZE_T layers_count, BACKPROP_SIZE_T pool_count, bool chain_layers)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(x_size);
   BACKPROP_ASSERT(y_size);
   BACKPROP_ASSERT(layers_count);
@@ -2653,6 +3158,8 @@ static struct BackpropNetwork** BackpropNetwork_MallocPool(BACKPROP_SIZE_T x_siz
 
 static void BackpropNetwork_FreePool(struct BackpropNetwork** network_pool, BACKPROP_SIZE_T pool_count)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(network_pool);
   BACKPROP_ASSERT(pool_count);
 
@@ -2682,6 +3189,8 @@ static void BackpropNetwork_FreePool(struct BackpropNetwork** network_pool, BACK
 
 static void BackpropEvolver_MateLayers(BackpropEvolver_t* evolver, BackpropLayer_t* beta, const BackpropLayer_t* alpha)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(beta);
   BACKPROP_ASSERT(alpha);
   {
@@ -2713,6 +3222,8 @@ static void BackpropEvolver_MateLayers(BackpropEvolver_t* evolver, BackpropLayer
 
 static void BackpropEvolver_MateNetworks(BackpropEvolver_t* evolver,  BackpropEvolutionStats_t* evolution_stats, struct BackpropNetwork* beta, const struct BackpropNetwork* alpha)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(beta);
   BACKPROP_ASSERT(alpha);
 
@@ -2739,6 +3250,8 @@ static void BackpropEvolver_MateNetworks(BackpropEvolver_t* evolver,  BackpropEv
 
 void BackpropEvolver_SetToDefault(BackpropEvolver_t* self)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(self);
 
   memset(self, 0, sizeof(BackpropEvolver_t));
@@ -2758,6 +3271,8 @@ void BackpropEvolver_SetToDefault(BackpropEvolver_t* self)
  */
 BACKPROP_FLOAT_T BackpropEvolver_Evolve(BackpropEvolver_t* evolver, BackpropEvolutionStats_t* evolution_stats, BackpropTrainer_t* trainer, BackpropTrainingStats_t* training_stats, BackpropExerciseStats_t* exercise_stats, struct BackpropNetwork* network, const BackpropTrainingSet_t* training_set)
 {
+  BACKPROP_TRACE();
+
   BACKPROP_ASSERT(evolver);
   BACKPROP_ASSERT(evolution_stats);
   BACKPROP_ASSERT(trainer);

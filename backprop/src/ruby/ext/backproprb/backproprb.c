@@ -33,10 +33,12 @@ static VALUE cBackpropEvolutionStats = Qnil;
 static VALUE cBackpropEvolver = Qnil;
 
 
-#if defined(USE_BACKPROP_TRACE)
-#define BACKPROP_TRACE(_arg_)    puts(_arg_)
+#define USE_BACKPROPRB_TRACE
+
+#if defined(USE_BACKPROPRB_TRACE)
+#define BACKPROPRB_TRACE()    printf("%s:%d\t%s\n", __FILE__, __LINE__, __FUNCTION__)
 #else
-#define BACKPROP_TRACE(_arg_)
+#define BACKPROPRB_TRACE()
 #endif
 
 
@@ -44,7 +46,7 @@ static VALUE cBackpropEvolver = Qnil;
 
 static void* CBackprop_Malloc (size_t size)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
   return xmalloc(size);
 }
 
@@ -53,7 +55,7 @@ static void* CBackprop_Malloc (size_t size)
 
 static void CBackprop_Free(void* obj)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
   xfree(obj);
 }
 
@@ -62,7 +64,7 @@ static void CBackprop_Free(void* obj)
 
 VALUE CBackprop_sigmoid(VALUE self, VALUE x)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
   {
     const BACKPROP_FLOAT_T y = Backprop_Sigmoid(NUM2DBL(x));
     return rb_float_new(y);
@@ -74,7 +76,7 @@ VALUE CBackprop_sigmoid(VALUE self, VALUE x)
 
 VALUE CBackprop_uniform_random_int(VALUE self)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
   {
     const int i = Backprop_UniformRandomInt();
     return INT2NUM(i);
@@ -86,7 +88,7 @@ VALUE CBackprop_uniform_random_int(VALUE self)
 
 VALUE CBackprop_used(void)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
   {
     const size_t in_use = Backprop_GetMallocInUse();
     return INT2NUM(in_use);
@@ -106,6 +108,8 @@ VALUE CBackprop_used(void)
 
 static VALUE CBackpropLayer_get_W(VALUE self)
 {
+  BACKPROPRB_TRACE();
+
   BackpropLayer_t* layer = NULL;
 
   Data_Get_Struct(self, BackpropLayer_t, layer);
@@ -117,22 +121,24 @@ static VALUE CBackpropLayer_get_W(VALUE self)
   else
   {
     VALUE a = rb_ary_new();
-    BACKPROP_FLOAT_T* w = layer->W;
 
-    size_t y = layer->y_count;
-    do
+    BACKPROP_SIZE_T i = 0;
+    BACKPROP_SIZE_T y_count = BackpropLayer_GetYCount(layer);
+    for (BACKPROP_SIZE_T y = 0; y < y_count; ++y)
     {
       VALUE row = rb_ary_new();
 
-      size_t x = layer->x_count;
-      do
+      BACKPROP_SIZE_T x_count = BackpropLayer_GetXCount(layer);
+      for (BACKPROP_SIZE_T x = 0; x < x_count; ++x)
       {
-        rb_ary_push(row, rb_float_new(*w));
-        ++w;
-      } while(--x);
+        BACKPROP_FLOAT_T w = BackpropLayer_GetAtW(layer, i);
+        ++i;
+
+        rb_ary_push(row, rb_float_new(w));
+      }
 
       rb_ary_push(a, row);
-    } while (--y);
+    }
 
     return a;
   }
@@ -143,6 +149,8 @@ static VALUE CBackpropLayer_get_W(VALUE self)
 
 static VALUE CBackpropLayer_set_W(VALUE self, VALUE vals)
 {
+  BACKPROPRB_TRACE();
+
   const ID f = rb_intern("length");
   VALUE length_val = rb_funcall(vals, f, 0, 0);
   size_t length = NUM2INT(length_val);
@@ -163,7 +171,7 @@ static VALUE CBackpropLayer_set_W(VALUE self, VALUE vals)
     for (long i = 0; i < end; ++i)
     {
       VALUE val = rb_ary_entry(vals, i);
-      layer->W[i] = NUM2DBL(val);
+      BackpropLayer_SetAtW(layer, i, NUM2DBL(val));
     }
 
     return self;
@@ -172,9 +180,11 @@ static VALUE CBackpropLayer_set_W(VALUE self, VALUE vals)
 
 
 
-
+// TODO MOVE TO BACKPROPTRAININGSESSION
 static VALUE CBackpropLayer_get_g(VALUE self)
 {
+  BACKPROPRB_TRACE();
+
   BackpropLayer_t* layer;
   Data_Get_Struct(self, BackpropLayer_t, layer);
 
@@ -185,9 +195,9 @@ static VALUE CBackpropLayer_get_g(VALUE self)
   else
   {
     VALUE a = rb_ary_new();
-    BACKPROP_FLOAT_T* g = layer->g;
+    BACKPROP_FLOAT_T* g = BackpropLayer_GetG(layer);
 
-    size_t i = layer->y_count;
+    size_t i = BackpropLayer_GetYCount(layer);
     do
     {
       rb_ary_push(a, rb_float_new(*g));
@@ -203,6 +213,8 @@ static VALUE CBackpropLayer_get_g(VALUE self)
 
 static VALUE CBackpropLayer_set_g(VALUE self, VALUE vals)
 {
+  BACKPROPRB_TRACE();
+
   BackpropLayer_t* layer;
   Data_Get_Struct(self, BackpropLayer_t, layer);
 
@@ -217,12 +229,13 @@ static VALUE CBackpropLayer_set_g(VALUE self, VALUE vals)
     VALUE length_val = rb_funcall(vals, f, 0, 0);
     size_t length = NUM2INT(length_val);
 
-    const long end = (layer->y_count < length) ? layer->y_count : length;
+    const BACKPROP_SIZE_T y_count = BackpropLayer_GetYCount(layer);
+    const long end = (y_count < length) ? y_count : length;
 
     for (long i = 0; i < end; ++i)
     {
       VALUE val = rb_ary_entry(vals, i);
-      layer->g[i] = NUM2DBL(val);
+      BackpropLayer_SetAtG(layer, i, NUM2DBL(val));
     }
 
     return self;
@@ -234,10 +247,12 @@ static VALUE CBackpropLayer_set_g(VALUE self, VALUE vals)
 
 static VALUE CBackpropLayer_get_x(VALUE self)
 {
+  BACKPROPRB_TRACE();
+
   BackpropLayer_t* layer;
   Data_Get_Struct(self, BackpropLayer_t, layer);
 
-  if (!self)
+  if (!layer)
   {
     return Qnil;
   }
@@ -246,15 +261,12 @@ static VALUE CBackpropLayer_get_x(VALUE self)
   {
     VALUE a = rb_ary_new();
 
-    BACKPROP_FLOAT_T* x = layer->x;
-
-    size_t i = layer->x_count;
-    do
+    BACKPROP_SIZE_T x_count = BackpropLayer_GetXCount(layer);
+    for (BACKPROP_SIZE_T i = 0; i < x_count; ++i)
     {
-      rb_ary_push(a, rb_float_new(*x));
-      ++x;
-    } while(--i);
-
+      const BACKPROP_FLOAT_T x = BackpropLayer_GetAtX(layer, i);
+      rb_ary_push(a, rb_float_new(x));
+    }
     return a;
   }
 }
@@ -264,6 +276,8 @@ static VALUE CBackpropLayer_get_x(VALUE self)
 
 static VALUE CBackpropLayer_set_x(VALUE self, VALUE vals)
 {
+  BACKPROPRB_TRACE();
+
   const ID f = rb_intern("length");
   VALUE length_val = rb_funcall(vals, f, 0, 0);
   size_t length = NUM2INT(length_val);
@@ -276,12 +290,13 @@ static VALUE CBackpropLayer_set_x(VALUE self, VALUE vals)
   }
   else
   {
-    const long end = (layer->x_count < length) ? layer->x_count : length;
+    BACKPROP_SIZE_T x_count = BackpropLayer_GetXCount(layer);
+    const long end = (x_count < length) ? x_count : length;
 
     for (long i = 0; i < end; ++i)
     {
       VALUE val = rb_ary_entry(vals, i);
-      layer->x[i] = NUM2DBL(val);
+      BackpropLayer_SetAtX(layer, i, NUM2DBL(val));
     }
 
     return self;
@@ -293,23 +308,29 @@ static VALUE CBackpropLayer_set_x(VALUE self, VALUE vals)
 
 static VALUE CBackpropLayer_get_y(VALUE self)
 {
+  BACKPROPRB_TRACE();
+
   BackpropLayer_t* layer;
   Data_Get_Struct(self, BackpropLayer_t, layer);
 
-  VALUE a = rb_ary_new();
-
-  const ID f = rb_intern("push");
-
-  BACKPROP_FLOAT_T* y = layer->y;
-
-  size_t i = layer->y_count;
-  do
+  if (!layer)
   {
-    rb_funcall(a, f, 1, rb_float_new(*y));
-    ++y;
-  } while(--i);
+    return Qnil;
+  }
 
-  return a;
+  else
+  {
+    VALUE a = rb_ary_new();
+
+    BACKPROP_SIZE_T y_count = BackpropLayer_GetYCount(layer);
+    for (BACKPROP_SIZE_T i = 0; i < y_count; ++i)
+    {
+      const BACKPROP_FLOAT_T y = BackpropLayer_GetAtY(layer, i);
+      rb_ary_push(a, rb_float_new(y));
+    }
+
+    return a;
+  }
 }
 
 
@@ -317,6 +338,8 @@ static VALUE CBackpropLayer_get_y(VALUE self)
 
 static VALUE CBackpropLayer_set_y(VALUE self, VALUE vals)
 {
+  BACKPROPRB_TRACE();
+
   BackpropLayer_t* layer;
   Data_Get_Struct(self, BackpropLayer_t, layer);
 
@@ -324,12 +347,13 @@ static VALUE CBackpropLayer_set_y(VALUE self, VALUE vals)
   VALUE length_val = rb_funcall(vals, f, 0, 0);
   size_t length = NUM2INT(length_val);
 
-  const long end = (layer->y_count < length) ? layer->y_count : length;
+  BACKPROP_SIZE_T y_count = BackpropLayer_GetYCount(layer);
+  const long end = (y_count < length) ? y_count : length;
 
   for (long i = 0; i < end; ++i)
   {
     VALUE val = rb_ary_entry(vals, i);
-    layer->y[i] = NUM2DBL(val);
+    BackpropLayer_SetAtY(layer, i, NUM2DBL(val));
   }
 
   return self;
@@ -340,6 +364,8 @@ static VALUE CBackpropLayer_set_y(VALUE self, VALUE vals)
 
 static VALUE CBackpropLayer_get_W_count(VALUE self)
 {
+  BACKPROPRB_TRACE();
+
   BackpropLayer_t* layer;
   Data_Get_Struct(self, BackpropLayer_t, layer);
 
@@ -353,6 +379,8 @@ static VALUE CBackpropLayer_get_W_count(VALUE self)
 
 static VALUE CBackpropLayer_get_W_sum(VALUE self)
 {
+  BACKPROPRB_TRACE();
+
   BackpropLayer_t* layer;
   Data_Get_Struct(self, BackpropLayer_t, layer);
 
@@ -366,6 +394,8 @@ static VALUE CBackpropLayer_get_W_sum(VALUE self)
 
 static VALUE CBackpropLayer_get_W_mean(VALUE self)
 {
+  BACKPROPRB_TRACE();
+
   BackpropLayer_t* layer;
   Data_Get_Struct(self, BackpropLayer_t, layer);
 
@@ -379,6 +409,8 @@ static VALUE CBackpropLayer_get_W_mean(VALUE self)
 
 static VALUE CBackpropLayer_get_W_stddev(VALUE self)
 {
+  BACKPROPRB_TRACE();
+
   BackpropLayer_t* layer;
   Data_Get_Struct(self, BackpropLayer_t, layer);
 
@@ -392,10 +424,19 @@ static VALUE CBackpropLayer_get_W_stddev(VALUE self)
 
 static VALUE CBackpropLayer_get_x_count(VALUE self)
 {
-  BackpropLayer_t* layer;
-  Data_Get_Struct(self, BackpropLayer_t, layer);
+  BACKPROPRB_TRACE();
 
-  return INT2NUM(layer->x_count);
+  BackpropLayer_t* layer = 0;
+  Data_Get_Struct(self, BackpropLayer_t, layer);
+  printf("layer = %p\n", layer);
+  if (layer)
+  {
+    return INT2NUM(BackpropLayer_GetXCount(layer));
+  }
+  else
+  {
+    return Qnil;
+  }
 }
 
 
@@ -403,10 +444,12 @@ static VALUE CBackpropLayer_get_x_count(VALUE self)
 
 static VALUE CBackpropLayer_get_y_count(VALUE self)
 {
+  BACKPROPRB_TRACE();
+
   BackpropLayer_t* layer;
   Data_Get_Struct(self, BackpropLayer_t, layer);
 
-  return INT2NUM(layer->y_count);
+  return INT2NUM(BackpropLayer_GetYCount(layer));
 }
 
 
@@ -414,6 +457,8 @@ static VALUE CBackpropLayer_get_y_count(VALUE self)
 
 static VALUE CBackpropLayer_to_hash(VALUE self)
 {
+  BACKPROPRB_TRACE();
+
   BackpropLayer_t* layer;
   Data_Get_Struct(self, BackpropLayer_t, layer);
 
@@ -430,6 +475,8 @@ static VALUE CBackpropLayer_to_hash(VALUE self)
 
 static VALUE CBackpropLayer_randomize(VALUE self, VALUE gain_val)
 {
+  BACKPROPRB_TRACE();
+
   BackpropLayer_t* layer;
   Data_Get_Struct(self, BackpropLayer_t, layer);
 
@@ -445,6 +492,8 @@ static VALUE CBackpropLayer_randomize(VALUE self, VALUE gain_val)
 
 static VALUE CBackpropLayer_identity(VALUE self)
 {
+  BACKPROPRB_TRACE();
+
   BackpropLayer_t* layer;
   Data_Get_Struct(self, BackpropLayer_t, layer);
 
@@ -458,6 +507,8 @@ static VALUE CBackpropLayer_identity(VALUE self)
 
 static VALUE CBackpropLayer_reset(VALUE self)
 {
+  BACKPROPRB_TRACE();
+
   BackpropLayer_t* layer;
   Data_Get_Struct(self, BackpropLayer_t, layer);
 
@@ -471,6 +522,8 @@ static VALUE CBackpropLayer_reset(VALUE self)
 
 static VALUE CBackpropLayer_prune(VALUE self, VALUE threshold_val)
 {
+  BACKPROPRB_TRACE();
+
   BackpropLayer_t* layer;
   Data_Get_Struct(self, BackpropLayer_t, layer);
 
@@ -486,6 +539,8 @@ static VALUE CBackpropLayer_prune(VALUE self, VALUE threshold_val)
 
 static VALUE CBackpropLayer_activate(VALUE self)
 {
+  BACKPROPRB_TRACE();
+
   BackpropLayer_t* layer;
   Data_Get_Struct(self, BackpropLayer_t, layer);
 
@@ -497,9 +552,9 @@ static VALUE CBackpropLayer_activate(VALUE self)
 
 
 
-static void CBackpropLayer_Free(struct BackpropLayer* layer)
+static void CBackpropLayer_free(struct BackpropLayer* layer)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
 
   BackpropLayer_Free(layer);
 }
@@ -509,7 +564,7 @@ static void CBackpropLayer_Free(struct BackpropLayer* layer)
 
 static VALUE CBackpropLayer_initialize(VALUE self, VALUE x_size, VALUE y_size)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
 
   return self;
 }
@@ -519,18 +574,24 @@ static VALUE CBackpropLayer_initialize(VALUE self, VALUE x_size, VALUE y_size)
 
 static VALUE CBackpropLayer_new(VALUE klass, VALUE x_count_val, VALUE y_count_val)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
 
   BACKPROP_SIZE_T x_count = NUM2UINT(x_count_val);
-  BACKPROP_SIZE_T  y_count = NUM2UINT(y_count_val);
+  BACKPROP_SIZE_T y_count = NUM2UINT(y_count_val);
+
+  printf("x_count = %ld, y_count = %ld\n", x_count, y_count);
 
   // allocate structure
   struct BackpropLayer* layer = BackpropLayer_Malloc(x_count, y_count);
 
-  // wrap it in a ruby object, this will cause GC to call free function
-  VALUE tdata = Data_Wrap_Struct(klass, 0, CBackpropLayer_Free, layer);
+  printf("new layer = %p\n", layer);
+  printf("layer->x_size = %ld\n", BackpropLayer_GetXCount(layer));
+  printf("layer->y_size = %ld\n", BackpropLayer_GetYCount(layer));
 
-  // call initialize
+  // wrap it in a ruby object, this will cause GC to call free function
+  VALUE tdata = Data_Wrap_Struct(klass, 0, CBackpropLayer_free, layer);
+
+  //// call initialize
   VALUE argv[2] = {x_count_val, y_count_val};
   rb_obj_call_init(tdata, 2, argv);
 
@@ -555,7 +616,7 @@ static VALUE CBackpropLayer_new(VALUE klass, VALUE x_count_val, VALUE y_count_va
 
 static VALUE CBackpropNetworkStats_get_x_size(VALUE self)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
 
   BackpropNetworkStats_t* stats;
   Data_Get_Struct(self, BackpropNetworkStats_t, stats);
@@ -568,7 +629,7 @@ static VALUE CBackpropNetworkStats_get_x_size(VALUE self)
 
 static VALUE CBackpropNetworkStats_set_x_size(VALUE self, VALUE val)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
 
   BackpropNetworkStats_t* stats;
   Data_Get_Struct(self, BackpropNetworkStats_t, stats);
@@ -582,7 +643,7 @@ static VALUE CBackpropNetworkStats_set_x_size(VALUE self, VALUE val)
 
 static VALUE CBackpropNetworkStats_get_y_size(VALUE self)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
 
   BackpropNetworkStats_t* stats;
   Data_Get_Struct(self, BackpropNetworkStats_t, stats);
@@ -595,7 +656,7 @@ static VALUE CBackpropNetworkStats_get_y_size(VALUE self)
 
 static VALUE CBackpropNetworkStats_set_y_size(VALUE self, VALUE val)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
 
   BackpropNetworkStats_t* stats;
   Data_Get_Struct(self, BackpropNetworkStats_t, stats);
@@ -610,7 +671,7 @@ static VALUE CBackpropNetworkStats_set_y_size(VALUE self, VALUE val)
 
 static VALUE CBackpropNetworkStats_get_layers_count(VALUE self)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
 
   BackpropNetworkStats_t* stats;
   Data_Get_Struct(self, BackpropNetworkStats_t, stats);
@@ -623,7 +684,7 @@ static VALUE CBackpropNetworkStats_get_layers_count(VALUE self)
 
 static VALUE CBackpropNetworkStats_set_layers_count(VALUE self, VALUE val)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
 
   BackpropNetworkStats_t* stats;
   Data_Get_Struct(self, BackpropNetworkStats_t, stats);
@@ -638,7 +699,7 @@ static VALUE CBackpropNetworkStats_set_layers_count(VALUE self, VALUE val)
 
 static VALUE CBackpropNetworkStats_get_layers_size(VALUE self)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
 
   BackpropNetworkStats_t* stats;
   Data_Get_Struct(self, BackpropNetworkStats_t, stats);
@@ -651,7 +712,7 @@ static VALUE CBackpropNetworkStats_get_layers_size(VALUE self)
 
 static VALUE CBackpropNetworkStats_set_layers_size(VALUE self, VALUE val)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
 
   BackpropNetworkStats_t* stats;
   Data_Get_Struct(self, BackpropNetworkStats_t, stats);
@@ -666,7 +727,7 @@ static VALUE CBackpropNetworkStats_set_layers_size(VALUE self, VALUE val)
 
 static VALUE CBackpropNetworkStats_get_layers_w_count(VALUE self)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
 
   BackpropNetworkStats_t* stats;
   Data_Get_Struct(self, BackpropNetworkStats_t, stats);
@@ -679,7 +740,7 @@ static VALUE CBackpropNetworkStats_get_layers_w_count(VALUE self)
 
 static VALUE CBackpropNetworkStats_set_layers_w_count(VALUE self, VALUE val)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
 
   BackpropNetworkStats_t* stats;
   Data_Get_Struct(self, BackpropNetworkStats_t, stats);
@@ -694,7 +755,7 @@ static VALUE CBackpropNetworkStats_set_layers_w_count(VALUE self, VALUE val)
 
 static VALUE CBackpropNetworkStats_get_layers_w_size(VALUE self)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
 
   BackpropNetworkStats_t* stats;
   Data_Get_Struct(self, BackpropNetworkStats_t, stats);
@@ -707,7 +768,7 @@ static VALUE CBackpropNetworkStats_get_layers_w_size(VALUE self)
 
 static VALUE CBackpropNetworkStats_set_layers_w_size(VALUE self, VALUE val)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
 
   BackpropNetworkStats_t* stats;
   Data_Get_Struct(self, BackpropNetworkStats_t, stats);
@@ -722,7 +783,7 @@ static VALUE CBackpropNetworkStats_set_layers_w_size(VALUE self, VALUE val)
 
 static VALUE CBackpropNetworkStats_get_layers_w_avg(VALUE self)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
 
   BackpropNetworkStats_t* stats;
   Data_Get_Struct(self, BackpropNetworkStats_t, stats);
@@ -735,7 +796,7 @@ static VALUE CBackpropNetworkStats_get_layers_w_avg(VALUE self)
 
 static VALUE CBackpropNetworkStats_set_layers_w_avg(VALUE self, VALUE val)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
 
   BackpropNetworkStats_t* stats;
   Data_Get_Struct(self, BackpropNetworkStats_t, stats);
@@ -750,7 +811,7 @@ static VALUE CBackpropNetworkStats_set_layers_w_avg(VALUE self, VALUE val)
 
 static VALUE CBackpropNetworkStats_get_layers_w_stddev(VALUE self)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
 
   BackpropNetworkStats_t* stats;
   Data_Get_Struct(self, BackpropNetworkStats_t, stats);
@@ -763,7 +824,7 @@ static VALUE CBackpropNetworkStats_get_layers_w_stddev(VALUE self)
 
 static VALUE CBackpropNetworkStats_set_layers_w_stddev(VALUE self, VALUE val)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
 
   BackpropNetworkStats_t* stats;
   Data_Get_Struct(self, BackpropNetworkStats_t, stats);
@@ -778,7 +839,7 @@ static VALUE CBackpropNetworkStats_set_layers_w_stddev(VALUE self, VALUE val)
 
 static VALUE CBackpropNetworkStats_to_hash(VALUE self)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
 
   BackpropNetworkStats_t* stats;
   Data_Get_Struct(self, BackpropNetworkStats_t, stats);
@@ -801,7 +862,7 @@ static VALUE CBackpropNetworkStats_to_hash(VALUE self)
 
 static VALUE CBackpropNetworkStats_new(VALUE klass)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
 
   // allocate structure
   BackpropNetworkStats_t* instance = xmalloc(sizeof(BackpropNetworkStats_t));
@@ -834,7 +895,7 @@ static VALUE CBackpropNetworkStats_new(VALUE klass)
 
 static VALUE CBackpropNetwork_activate(VALUE self, VALUE input)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
 
   BackpropNetwork_t* network;
   Data_Get_Struct(self, BackpropNetwork_t, network);
@@ -864,7 +925,7 @@ static VALUE CBackpropNetwork_activate(VALUE self, VALUE input)
 
 static VALUE CBackpropNetwork_x_size(VALUE self)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
 
   BackpropNetwork_t* network;
   Data_Get_Struct(self, BackpropNetwork_t, network);
@@ -879,7 +940,7 @@ static VALUE CBackpropNetwork_x_size(VALUE self)
 
 static VALUE CBackpropNetwork_get_x(VALUE self)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
 
   BackpropNetwork_t* network;
   Data_Get_Struct(self, BackpropNetwork_t, network);
@@ -902,7 +963,7 @@ static VALUE CBackpropNetwork_get_x(VALUE self)
 
 static VALUE CBackpropNetwork_y_size(VALUE self)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
 
   BackpropNetwork_t* network;
   Data_Get_Struct(self, BackpropNetwork_t, network);
@@ -917,7 +978,7 @@ static VALUE CBackpropNetwork_y_size(VALUE self)
 
 static VALUE CBackpropNetwork_get_y(VALUE self)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
 
   BackpropNetwork_t* network;
   Data_Get_Struct(self, BackpropNetwork_t, network);
@@ -940,7 +1001,7 @@ static VALUE CBackpropNetwork_get_y(VALUE self)
 
 static VALUE CBackpropNetwork_layers_count(VALUE self)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
 
   BackpropNetwork_t* network;
   Data_Get_Struct(self, BackpropNetwork_t, network);
@@ -956,12 +1017,12 @@ static VALUE CBackpropNetwork_layers_count(VALUE self)
 
 static VALUE CBackpropNetwork_get_layer(VALUE self, VALUE index_val)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
 
   BackpropNetwork_t* network;
   Data_Get_Struct(self, BackpropNetwork_t, network);
 
-  int index = NUM2INT(index_val);
+  BACKPROP_SIZE_T index = NUM2UINT(index_val);
 
   const struct BackpropLayersArray* layers = BackpropNetwork_GetLayers(network);
   const BACKPROP_SIZE_T layers_count = layers->count;
@@ -981,8 +1042,7 @@ static VALUE CBackpropNetwork_get_layer(VALUE self, VALUE index_val)
     return Qnil;
   }
 
-  struct BackpropLayer* layer = layers->data + index;
-
+  const struct BackpropLayer* layer = BackpropLayersArray_GetConstLayer(layers, index);
   VALUE tdata = Data_Wrap_Struct(cBackpropLayer, 0, 0, layer);
 
   return tdata;
@@ -993,7 +1053,7 @@ static VALUE CBackpropNetwork_get_layer(VALUE self, VALUE index_val)
 
 static VALUE CBackpropNetwork_get_jitter(VALUE self)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
 
   BackpropNetwork_t* network;
   Data_Get_Struct(self, BackpropNetwork_t, network);
@@ -1008,7 +1068,7 @@ static VALUE CBackpropNetwork_get_jitter(VALUE self)
 
 static VALUE CBackpropNetwork_set_jitter(VALUE self, VALUE value)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
 
   BackpropNetwork_t* network;
   Data_Get_Struct(self, BackpropNetwork_t, network);
@@ -1025,7 +1085,7 @@ static VALUE CBackpropNetwork_set_jitter(VALUE self, VALUE value)
 
 static VALUE CBackpropNetwork_randomize(VALUE self, VALUE gain_val, VALUE seed_val)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
 
   BackpropNetwork_t* network;
   Data_Get_Struct(self, BackpropNetwork_t, network);
@@ -1043,7 +1103,7 @@ static VALUE CBackpropNetwork_randomize(VALUE self, VALUE gain_val, VALUE seed_v
 
 static VALUE CBackpropNetwork_identity(VALUE self)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
 
   BackpropNetwork_t* network;
   Data_Get_Struct(self, BackpropNetwork_t, network);
@@ -1058,7 +1118,7 @@ static VALUE CBackpropNetwork_identity(VALUE self)
 
 static VALUE CBackpropNetwork_round(VALUE self)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
 
   BackpropNetwork_t* network;
   Data_Get_Struct(self, BackpropNetwork_t, network);
@@ -1072,7 +1132,7 @@ static VALUE CBackpropNetwork_round(VALUE self)
 
 static VALUE CBackpropNetwork_reset(VALUE self)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
 
   BackpropNetwork_t* network;
   Data_Get_Struct(self, BackpropNetwork_t, network);
@@ -1087,7 +1147,7 @@ static VALUE CBackpropNetwork_reset(VALUE self)
 
 static VALUE CBackpropNetwork_prune(VALUE self, VALUE threshold_val)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
 
   BackpropNetwork_t* network;
   Data_Get_Struct(self, BackpropNetwork_t, network);
@@ -1104,7 +1164,7 @@ static VALUE CBackpropNetwork_prune(VALUE self, VALUE threshold_val)
 
 static VALUE CBackpropNetwork_get_stats(VALUE self)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
 
   BackpropNetwork_t* network;
   Data_Get_Struct(self, BackpropNetwork_t, network);
@@ -1124,7 +1184,7 @@ static VALUE CBackpropNetwork_get_stats(VALUE self)
 
 static VALUE CBackpropNetwork_to_hash(VALUE self)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
 
   BackpropNetwork_t* network;
   Data_Get_Struct(self, BackpropNetwork_t, network);
@@ -1156,7 +1216,7 @@ static VALUE CBackpropNetwork_to_hash(VALUE self)
 
 static VALUE CBackpropNetwork_to_file(VALUE self, VALUE file_name_val)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
 
   VALUE_TO_C_PTR(BackpropNetwork_t, network, self);
 
@@ -1172,7 +1232,7 @@ static VALUE CBackpropNetwork_to_file(VALUE self, VALUE file_name_val)
 
 static VALUE CBackpropNetwork_from_file(VALUE self, VALUE file_name_val)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
 
   VALUE_TO_C_PTR(BackpropNetwork_t, network, self);
 
@@ -1188,7 +1248,7 @@ static VALUE CBackpropNetwork_from_file(VALUE self, VALUE file_name_val)
 
 static VALUE CBackpropNetwork_initialize(VALUE self)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
 
   CBackpropNetwork_reset(self);
 
@@ -1200,7 +1260,7 @@ static VALUE CBackpropNetwork_initialize(VALUE self)
 
 static void CBackpropNetwork_free(struct BackpropNetwork* network)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
 
   BackpropNetwork_Free(network);
 }
@@ -1210,7 +1270,7 @@ static void CBackpropNetwork_free(struct BackpropNetwork* network)
 
 static VALUE CBackpropNetwork_new(VALUE klass, VALUE args)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
 
   VALUE x_size_val = rb_hash_aref(args, rb_str_new2("x_size"));
   VALUE y_size_val = rb_hash_aref(args, rb_str_new2("y_size"));
@@ -1252,7 +1312,7 @@ static VALUE CBackpropNetwork_new(VALUE klass, VALUE args)
 
 static VALUE CBackpropTrainingSet_x_at(VALUE self, VALUE index)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
 
   BackpropTrainingSet_t* training_set;
   Data_Get_Struct(self, BackpropTrainingSet_t, training_set);
@@ -1276,7 +1336,7 @@ static VALUE CBackpropTrainingSet_x_at(VALUE self, VALUE index)
 
 static VALUE CBackpropTrainingSet_y_at(VALUE self, VALUE index)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
 
   BackpropTrainingSet_t* training_set;
   Data_Get_Struct(self, BackpropTrainingSet_t, training_set);
@@ -1300,7 +1360,7 @@ static VALUE CBackpropTrainingSet_y_at(VALUE self, VALUE index)
 
 static VALUE CBackpropTrainingSet_count(VALUE self)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
 
   BackpropTrainingSet_t* training_set;
   Data_Get_Struct(self, BackpropTrainingSet_t, training_set);
@@ -1313,7 +1373,7 @@ static VALUE CBackpropTrainingSet_count(VALUE self)
 
 static VALUE CBackpropTrainingSet_x_size(VALUE self)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
 
   BackpropTrainingSet_t* training_set;
   Data_Get_Struct(self, BackpropTrainingSet_t, training_set);
@@ -1326,7 +1386,7 @@ static VALUE CBackpropTrainingSet_x_size(VALUE self)
 
 static VALUE CBackpropTrainingSet_y_size(VALUE self)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
 
   BackpropTrainingSet_t* training_set;
   Data_Get_Struct(self, BackpropTrainingSet_t, training_set);
@@ -1339,7 +1399,7 @@ static VALUE CBackpropTrainingSet_y_size(VALUE self)
 
 static VALUE CBackpropTrainingSet_to_hash(VALUE self)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
 
   BackpropTrainingSet_t* training_set;
   Data_Get_Struct(self, BackpropTrainingSet_t, training_set);
@@ -1371,7 +1431,7 @@ static VALUE CBackpropTrainingSet_to_hash(VALUE self)
 
 static VALUE CBackpropTrainingSet_to_file(VALUE self, VALUE file_name_val)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
 
   VALUE_TO_C_PTR(BackpropTrainingSet_t, training_set, self);
 
@@ -1387,7 +1447,7 @@ static VALUE CBackpropTrainingSet_to_file(VALUE self, VALUE file_name_val)
 
 static VALUE CBackpropTrainingSet_from_file(VALUE self, VALUE file_name_val)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
 
   VALUE_TO_C_PTR(BackpropTrainingSet_t, training_set, self);
 
@@ -1403,7 +1463,7 @@ static VALUE CBackpropTrainingSet_from_file(VALUE self, VALUE file_name_val)
 
 static VALUE CBackpropTrainingSet_initialize(VALUE self)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
 
   return self;
 }
@@ -1413,7 +1473,7 @@ static VALUE CBackpropTrainingSet_initialize(VALUE self)
 
 static void CBackpropTrainingSet_free(struct BackpropTrainingSet* self)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
 
   BackpropTrainingSet_Free(self);
 }
@@ -1423,7 +1483,7 @@ static void CBackpropTrainingSet_free(struct BackpropTrainingSet* self)
 
 static VALUE CBackpropTrainingSet_new(VALUE klass, VALUE x_value, VALUE y_value)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
 
   size_t count = 0;
   size_t x_size = 0;
@@ -1495,7 +1555,7 @@ static VALUE CBackpropTrainingSet_new(VALUE klass, VALUE x_value, VALUE y_value)
 
 static VALUE CBackpropExerciseStats_exercise_clock_ticks(VALUE self)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
 
   BackpropExerciseStats_t* stats;
   Data_Get_Struct(self, BackpropExerciseStats_t, stats);
@@ -1508,7 +1568,7 @@ static VALUE CBackpropExerciseStats_exercise_clock_ticks(VALUE self)
 
 static VALUE CBackpropExerciseStats_activate_count(VALUE self)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
 
   BackpropExerciseStats_t* stats;
   Data_Get_Struct(self, BackpropExerciseStats_t, stats);
@@ -1520,7 +1580,7 @@ static VALUE CBackpropExerciseStats_activate_count(VALUE self)
 
 static VALUE CBackpropExerciseStats_error(VALUE self)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
 
   BackpropExerciseStats_t* stats;
   Data_Get_Struct(self, BackpropExerciseStats_t, stats);
@@ -1533,7 +1593,7 @@ static VALUE CBackpropExerciseStats_error(VALUE self)
 
 static VALUE CBackpropExerciseStats_to_hash(VALUE self)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
 
   BackpropExerciseStats_t* stats;
   Data_Get_Struct(self, BackpropExerciseStats_t, stats);
@@ -1551,7 +1611,7 @@ static VALUE CBackpropExerciseStats_to_hash(VALUE self)
 
 static VALUE CBackpropExerciseStats_new(VALUE klass)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
 
   // allocate structure
   BackpropExerciseStats_t* instance = xmalloc(sizeof(BackpropExerciseStats_t));
@@ -1580,7 +1640,7 @@ static VALUE CBackpropExerciseStats_new(VALUE klass)
 
 static VALUE CBackpropTrainingStats_set_weight_correction_total(VALUE self)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
 
   BackpropTrainingStats_t* stats;
   Data_Get_Struct(self, BackpropTrainingStats_t, stats);
@@ -1593,7 +1653,7 @@ static VALUE CBackpropTrainingStats_set_weight_correction_total(VALUE self)
 
 static VALUE CBackpropTrainingStats_batch_weight_correction_total(VALUE self)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
 
   BackpropTrainingStats_t* stats;
   Data_Get_Struct(self, BackpropTrainingStats_t, stats);
@@ -1606,7 +1666,7 @@ static VALUE CBackpropTrainingStats_batch_weight_correction_total(VALUE self)
 
 static VALUE CBackpropTrainingStats_teach_total(VALUE self)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
 
   BackpropTrainingStats_t* stats;
   Data_Get_Struct(self, BackpropTrainingStats_t, stats);
@@ -1619,7 +1679,7 @@ static VALUE CBackpropTrainingStats_teach_total(VALUE self)
 
 static VALUE CBackpropTrainingStats_pair_total(VALUE self)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
 
   BackpropTrainingStats_t* stats;
   Data_Get_Struct(self, BackpropTrainingStats_t, stats);
@@ -1632,7 +1692,7 @@ static VALUE CBackpropTrainingStats_pair_total(VALUE self)
 
 static VALUE CBackpropTrainingStats_set_total(VALUE self)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
 
   BackpropTrainingStats_t* stats;
   Data_Get_Struct(self, BackpropTrainingStats_t, stats);
@@ -1645,7 +1705,7 @@ static VALUE CBackpropTrainingStats_set_total(VALUE self)
 
 static VALUE CBackpropTrainingStats_batches_total(VALUE self)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
 
   BackpropTrainingStats_t* stats;
   Data_Get_Struct(self, BackpropTrainingStats_t, stats);
@@ -1658,7 +1718,7 @@ static VALUE CBackpropTrainingStats_batches_total(VALUE self)
 
 static VALUE CBackpropTrainingStats_stubborn_batches_total(VALUE self)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
 
   BackpropTrainingStats_t* stats;
   Data_Get_Struct(self, BackpropTrainingStats_t, stats);
@@ -1671,7 +1731,7 @@ static VALUE CBackpropTrainingStats_stubborn_batches_total(VALUE self)
 
 static VALUE CBackpropTrainingStats_stagnate_batches_total(VALUE self)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
 
   BackpropTrainingStats_t* stats;
   Data_Get_Struct(self, BackpropTrainingStats_t, stats);
@@ -1684,7 +1744,7 @@ static VALUE CBackpropTrainingStats_stagnate_batches_total(VALUE self)
 
 static VALUE CBackpropTrainingStats_train_clock(VALUE self)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
 
   BackpropTrainingStats_t* stats;
   Data_Get_Struct(self, BackpropTrainingStats_t, stats);
@@ -1697,7 +1757,7 @@ static VALUE CBackpropTrainingStats_train_clock(VALUE self)
 
 static VALUE CBackpropTrainingStats_to_hash(VALUE self)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
 
   BackpropTrainingStats_t* stats;
   Data_Get_Struct(self, BackpropTrainingStats_t, stats);
@@ -1721,7 +1781,7 @@ static VALUE CBackpropTrainingStats_to_hash(VALUE self)
 
 static VALUE CBackpropTrainingStats_new(VALUE klass)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
 
   // allocate structure
   BackpropTrainingStats_t* instance = xmalloc(sizeof(BackpropTrainingStats_t));
@@ -1754,7 +1814,7 @@ static VALUE CBackpropTrainer_teach_pair( VALUE trainer_val
                                         , VALUE x_val
                                         , VALUE y_desired_val)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
 
   BackpropTrainer_t* trainer = NULL;
   Data_Get_Struct(trainer_val, BackpropTrainer_t, trainer);
@@ -1833,7 +1893,7 @@ static VALUE CBackpropTrainer_train_pair( VALUE trainer_val
                                         , VALUE x_val
                                         , VALUE y_desired_val)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
 
   BackpropTrainer_t* trainer = NULL;
   Data_Get_Struct(trainer_val, BackpropTrainer_t, trainer);
@@ -1913,7 +1973,7 @@ static VALUE CBackpropTrainer_train_set( VALUE trainer_val
                                        , VALUE network_val
                                        , VALUE training_set_val)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
 
   BackpropTrainer_t* trainer = NULL;
   Data_Get_Struct(trainer_val, BackpropTrainer_t, trainer);
@@ -1971,7 +2031,7 @@ static VALUE CBackpropTrainer_train_batch( VALUE trainer_val
                                          , VALUE network_val
                                          , VALUE training_set_val)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
 
   BackpropTrainer_t* trainer = NULL;
   Data_Get_Struct(trainer_val, BackpropTrainer_t, trainer);
@@ -2037,7 +2097,7 @@ static VALUE CBackpropTrainer_train( VALUE trainer_val
                                    , VALUE network_val
                                    , VALUE training_set_val)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
 
   BackpropTrainer_t* trainer = NULL;
   BackpropTrainingStats_t* training_stats = NULL;
@@ -2100,7 +2160,7 @@ static VALUE CBackpropTrainer_exercise( VALUE self_val
                                       , VALUE network_val
                                       , VALUE training_set_val)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
 
   BackpropTrainer_t* trainer = NULL;
   BackpropExerciseStats_t* stats = NULL;
@@ -2146,7 +2206,7 @@ static VALUE CBackpropTrainer_exercise( VALUE self_val
 
 static VALUE CBackpropTrainer_get_error_tolerance(VALUE self)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
   {
     BackpropTrainer_t* trainer;
     Data_Get_Struct(self, BackpropTrainer_t, trainer);
@@ -2160,7 +2220,7 @@ static VALUE CBackpropTrainer_get_error_tolerance(VALUE self)
 
 static VALUE CBackpropTrainer_get_learning_rate(VALUE self)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
   {
     BackpropTrainer_t* trainer;
     Data_Get_Struct(self, BackpropTrainer_t, trainer);
@@ -2174,7 +2234,7 @@ static VALUE CBackpropTrainer_get_learning_rate(VALUE self)
 
 static VALUE CBackpropTrainer_get_mutation_rate(VALUE self)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
   {
     BackpropTrainer_t* trainer;
     Data_Get_Struct(self, BackpropTrainer_t, trainer);
@@ -2188,7 +2248,7 @@ static VALUE CBackpropTrainer_get_mutation_rate(VALUE self)
 
 static VALUE CBackpropTrainer_get_momentum_rate(VALUE self)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
   {
     BackpropTrainer_t* trainer;
     Data_Get_Struct(self, BackpropTrainer_t, trainer);
@@ -2202,7 +2262,7 @@ static VALUE CBackpropTrainer_get_momentum_rate(VALUE self)
 
 static VALUE CBackpropTrainer_get_max_reps(VALUE self)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
   {
     BackpropTrainer_t* trainer;
     Data_Get_Struct(self, BackpropTrainer_t, trainer);
@@ -2216,7 +2276,7 @@ static VALUE CBackpropTrainer_get_max_reps(VALUE self)
 
 static VALUE CBackpropTrainer_get_max_batch_sets(VALUE self)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
   {
     BackpropTrainer_t* trainer;
     Data_Get_Struct(self, BackpropTrainer_t, trainer);
@@ -2230,7 +2290,7 @@ static VALUE CBackpropTrainer_get_max_batch_sets(VALUE self)
 
 static VALUE CBackpropTrainer_set_max_batch_sets(VALUE self, VALUE value)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
   {
     BackpropTrainer_t* trainer;
     Data_Get_Struct(self, BackpropTrainer_t, trainer);
@@ -2246,7 +2306,7 @@ static VALUE CBackpropTrainer_set_max_batch_sets(VALUE self, VALUE value)
 
 static VALUE CBackpropTrainer_get_max_batches(VALUE self)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
   {
     BackpropTrainer_t* trainer;
     Data_Get_Struct(self, BackpropTrainer_t, trainer);
@@ -2260,7 +2320,7 @@ static VALUE CBackpropTrainer_get_max_batches(VALUE self)
 
 static VALUE CBackpropTrainer_set_max_batches(VALUE self, VALUE value)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
   {
     BackpropTrainer_t* trainer;
     Data_Get_Struct(self, BackpropTrainer_t, trainer);
@@ -2276,7 +2336,7 @@ static VALUE CBackpropTrainer_set_max_batches(VALUE self, VALUE value)
 
 static VALUE CBackpropTrainer_get_stagnate_tolerance(VALUE self)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
   {
     BackpropTrainer_t* trainer;
     Data_Get_Struct(self, BackpropTrainer_t, trainer);
@@ -2290,7 +2350,7 @@ static VALUE CBackpropTrainer_get_stagnate_tolerance(VALUE self)
 
 static VALUE CBackpropTrainer_get_max_stagnate_sets(VALUE self)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
   {
     BackpropTrainer_t* trainer;
     Data_Get_Struct(self, BackpropTrainer_t, trainer);
@@ -2304,7 +2364,7 @@ static VALUE CBackpropTrainer_get_max_stagnate_sets(VALUE self)
 
 static VALUE CBackpropTrainer_get_max_stagnate_batches(VALUE self)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
   {
     BackpropTrainer_t* trainer;
     Data_Get_Struct(self, BackpropTrainer_t, trainer);
@@ -2318,7 +2378,7 @@ static VALUE CBackpropTrainer_get_max_stagnate_batches(VALUE self)
 
 static VALUE CBackpropTrainer_get_min_set_weight_correction_limit(VALUE self)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
   {
     BackpropTrainer_t* trainer;
     Data_Get_Struct(self, BackpropTrainer_t, trainer);
@@ -2332,7 +2392,7 @@ static VALUE CBackpropTrainer_get_min_set_weight_correction_limit(VALUE self)
 
 static VALUE CBackpropTrainer_get_min_batch_weight_correction_limit(VALUE self)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
   {
     BackpropTrainer_t* trainer;
     Data_Get_Struct(self, BackpropTrainer_t, trainer);
@@ -2346,7 +2406,7 @@ static VALUE CBackpropTrainer_get_min_batch_weight_correction_limit(VALUE self)
 
 static VALUE CBackpropTrainer_get_batch_prune_threshold(VALUE self)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
   {
     BackpropTrainer_t* trainer;
     Data_Get_Struct(self, BackpropTrainer_t, trainer);
@@ -2360,7 +2420,7 @@ static VALUE CBackpropTrainer_get_batch_prune_threshold(VALUE self)
 
 static VALUE CBackpropTrainer_get_training_ratio(VALUE self)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
   {
     BackpropTrainer_t* trainer;
     Data_Get_Struct(self, BackpropTrainer_t, trainer);
@@ -2375,7 +2435,7 @@ static VALUE CBackpropTrainer_get_training_ratio(VALUE self)
 
 static VALUE CBackpropTrainer_get_batch_prune_rate(VALUE self)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
   {
     BackpropTrainer_t* trainer;
     Data_Get_Struct(self, BackpropTrainer_t, trainer);
@@ -2389,7 +2449,7 @@ static VALUE CBackpropTrainer_get_batch_prune_rate(VALUE self)
 
 static VALUE CBackpropTrainer_set_batch_prune_rate(VALUE self, VALUE value)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
   {
     BackpropTrainer_t* trainer;
     Data_Get_Struct(self, BackpropTrainer_t, trainer);
@@ -2405,7 +2465,7 @@ static VALUE CBackpropTrainer_set_batch_prune_rate(VALUE self, VALUE value)
 
 static VALUE CBackpropTrainer_to_hash(VALUE self)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
   {
     BackpropTrainer_t* trainer;
     Data_Get_Struct(self, BackpropTrainer_t, trainer);
@@ -2436,7 +2496,7 @@ static VALUE CBackpropTrainer_to_hash(VALUE self)
 
 static VALUE CBackpropTrainer_initialize(VALUE self)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
 
   return self;
 }
@@ -2446,7 +2506,7 @@ static VALUE CBackpropTrainer_initialize(VALUE self)
 
 static void CBackpropTrainer_Free(struct BackpropTrainer* trainer)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
 
   BackpropTrainer_Free(trainer);
 }
@@ -2456,7 +2516,7 @@ static void CBackpropTrainer_Free(struct BackpropTrainer* trainer)
 
 static VALUE CBackpropTrainer_new(VALUE klass, VALUE network_value)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
   {
     // get the network
     BackpropNetwork_t* network;
@@ -2491,7 +2551,7 @@ static VALUE CBackpropTrainer_new(VALUE klass, VALUE network_value)
 
 static VALUE CBackpropEvolutionStats_get_generation_count(VALUE self)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
   {
     BackpropEvolutionStats_t* stats;
     Data_Get_Struct(self, BackpropEvolutionStats_t, stats);
@@ -2505,7 +2565,7 @@ static VALUE CBackpropEvolutionStats_get_generation_count(VALUE self)
 
 static VALUE CBackpropEvolutionStats_get_mate_networks_count(VALUE self)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
   {
     BackpropEvolutionStats_t* stats;
     Data_Get_Struct(self, BackpropEvolutionStats_t, stats);
@@ -2519,7 +2579,7 @@ static VALUE CBackpropEvolutionStats_get_mate_networks_count(VALUE self)
 
 static VALUE CBackpropEvolutionStats_get_evolve_clock(VALUE self)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
   {
     BackpropEvolutionStats_t* stats;
     Data_Get_Struct(self, BackpropEvolutionStats_t, stats);
@@ -2533,7 +2593,7 @@ static VALUE CBackpropEvolutionStats_get_evolve_clock(VALUE self)
 
 static VALUE CBackpropEvolutionStats_to_hash(VALUE self)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
   {
     VALUE hash = rb_hash_new();
 
@@ -2550,7 +2610,7 @@ static VALUE CBackpropEvolutionStats_to_hash(VALUE self)
 
 static VALUE CBackpropEvolutionStats_new(VALUE klass)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
   {
     BackpropEvolutionStats_t* obj = xmalloc(sizeof(BackpropEvolutionStats_t));
 
@@ -2575,7 +2635,7 @@ static VALUE CBackpropEvolutionStats_new(VALUE klass)
 
 static VALUE CBackpropEvolver_get_pool_count(VALUE self)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
   {
     BackpropEvolver_t* obj;
     Data_Get_Struct(self, BackpropEvolver_t, obj);
@@ -2589,7 +2649,7 @@ static VALUE CBackpropEvolver_get_pool_count(VALUE self)
 
 static VALUE CBackpropEvolver_get_max_generations(VALUE self)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
   {
     BackpropEvolver_t* obj;
     Data_Get_Struct(self, BackpropEvolver_t, obj);
@@ -2603,7 +2663,7 @@ static VALUE CBackpropEvolver_get_max_generations(VALUE self)
 
 static VALUE CBackpropEvolver_get_mate_rate(VALUE self)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
   {
     BackpropEvolver_t* obj;
     Data_Get_Struct(self, BackpropEvolver_t, obj);
@@ -2617,7 +2677,7 @@ static VALUE CBackpropEvolver_get_mate_rate(VALUE self)
 
 static VALUE CBackpropEvolver_get_mutation_limit(VALUE self)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
   {
     BackpropEvolver_t* obj;
     Data_Get_Struct(self, BackpropEvolver_t, obj);
@@ -2631,7 +2691,7 @@ static VALUE CBackpropEvolver_get_mutation_limit(VALUE self)
 
 static VALUE CBackpropEvolver_get_seed(VALUE self)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
   {
     BackpropEvolver_t* obj;
     Data_Get_Struct(self, BackpropEvolver_t, obj);
@@ -2645,7 +2705,7 @@ static VALUE CBackpropEvolver_get_seed(VALUE self)
 
 static VALUE CBackpropEvolver_to_hash(VALUE self)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
   {
     VALUE hash = rb_hash_new();
 
@@ -2664,7 +2724,7 @@ static VALUE CBackpropEvolver_to_hash(VALUE self)
 
 static VALUE CBackpropEvolver_set_to_default(VALUE self)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
   {
     BackpropEvolver_t* obj;
     Data_Get_Struct(self, BackpropEvolver_t, obj);
@@ -2688,7 +2748,7 @@ static VALUE CBackpropEvolver_evolve( VALUE evolver_val
                                     , VALUE network_val
                                     , VALUE training_set_val)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
   {
     VALUE_TO_C_PTR(BackpropEvolver_t, evolver, evolver_val);
     VALUE_TO_C_PTR(BackpropEvolutionStats_t, evolution_stats, evolution_stats_val);
@@ -2716,7 +2776,7 @@ static VALUE CBackpropEvolver_evolve( VALUE evolver_val
 
 static VALUE CBackpropEvolver_new(VALUE klass)
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
   {
     struct BackpropEvolver* obj = xmalloc(sizeof(struct BackpropEvolver));
 
@@ -2742,7 +2802,7 @@ static VALUE CBackpropEvolver_new(VALUE klass)
 // The initialization method for this module
 void Init_backproprb()
 {
-  BACKPROP_TRACE(__FUNCTION__);
+  BACKPROPRB_TRACE();
   // configure Backprop libary
   //Backprop_SetMalloc(CBackprop_Malloc);
   //Backprop_SetFree(CBackprop_Free);

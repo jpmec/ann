@@ -25,18 +25,24 @@ end
 Rake::ExtensionTask.new('backproprb', spec)
 
 
-task :default do
-  
-  `gem uninstall backproprb`
+task :test do
 
-  `rake clobber`
-  `rake compile`
-  `rake gem`
-  `rake package`
-
-  `gem install pkg/backproprb`
-
-  `ruby test/test_backproprb.rb`
+  puts `ruby test/test_backproprb.rb`
 
 end
 
+
+task :default do
+
+  puts `gem uninstall backproprb`
+
+  puts `rake clobber`
+  puts /error/.match(`rake compile`)
+  puts `rake gem`
+  puts `rake package`
+
+  puts `gem install pkg/backproprb`
+
+#  puts `ruby test/test_backproprb.rb`
+
+end

@@ -1,24 +1,24 @@
 /** backprop_io.h
 
 Defines I/O functions for backprop.h.
- 
+
 
 Author: Joshua Petitt
 Available at: https://github.com/jpmec/ann
- 
- 
+
+
 Copyright (c) 2012-2013 Joshua Petitt
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), 
-to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, 
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"),
+to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software,
 and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
- 
+
 The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
- 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, 
-INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. 
-IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, 
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
 WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- 
+
 */
 
 
@@ -53,24 +53,24 @@ void Backprop_PutsOnMallocFail(size_t);
 
 /** Print the layer input.
  */
-void BackpropLayer_PrintfInput(const BackpropLayer_t* self);
+void BackpropLayer_PrintfInput(const struct BackpropLayer* self);
 
 
 /** Print the layer output.
  */
-void BackpropLayer_PrintfOutput(const BackpropLayer_t* self);
+void BackpropLayer_PrintfOutput(const struct BackpropLayer* self);
 
 
 /** Print layer weights.
  *  Returns the number of bytes printed.
  */
-size_t BackpropLayer_FprintfWeights(FILE* file, const BackpropLayer_t* self);
+size_t BackpropLayer_FprintfWeights(FILE* file, const struct BackpropLayer* self);
 
 
-void BackpropLayer_PrintfWeights(const BackpropLayer_t* self);
+void BackpropLayer_PrintfWeights(const struct BackpropLayer* self);
 
 
-void BackpropLayer_PutsWeights(const BackpropLayer_t* self);
+void BackpropLayer_PutsWeights(const struct BackpropLayer* self);
 
 
 
@@ -200,7 +200,7 @@ void BackpropTrainer_PrintfAfterTeachPair( const struct BackpropTrainer* trainer
                                          , const BACKPROP_BYTE_T* x, const BACKPROP_SIZE_T x_size
                                          , const BACKPROP_BYTE_T* yd, const BACKPROP_SIZE_T yd_size
                                          , const BACKPROP_BYTE_T* y, const BACKPROP_SIZE_T y_size
-                                         , BACKPROP_FLOAT_T error, BACKPROP_FLOAT_T weight_correction); 
+                                         , BACKPROP_FLOAT_T error, BACKPROP_FLOAT_T weight_correction);
 
 
 void BackpropTrainer_PutsAfterTeachPair( const struct BackpropTrainer* trainer
@@ -209,7 +209,7 @@ void BackpropTrainer_PutsAfterTeachPair( const struct BackpropTrainer* trainer
                                        , const BACKPROP_BYTE_T* x, const BACKPROP_SIZE_T x_size
                                        , const BACKPROP_BYTE_T* yd, const BACKPROP_SIZE_T yd_size
                                        , const BACKPROP_BYTE_T* y, const BACKPROP_SIZE_T y_size
-                                       , BACKPROP_FLOAT_T error, BACKPROP_FLOAT_T weight_correction); 
+                                       , BACKPROP_FLOAT_T error, BACKPROP_FLOAT_T weight_correction);
 
 
 void BackpropTrainer_FprintfAfterTrainSet(  FILE* file
@@ -249,15 +249,15 @@ void BackpropTrainer_PrintfAfterStagnateBatch(struct BackpropTrainer* trainer, c
 void BackpropTrainer_PutsAfterStagnateBatch(struct BackpropTrainer* trainer, const struct BackpropTrainingStats* stats, struct BackpropNetwork* network, const BackpropTrainingSet_t* training_set, BACKPROP_SIZE_T batches, BACKPROP_FLOAT_T error);
 
 
-void BackpropTrainer_PrintfAfterTrainSuccess(struct BackpropTrainer* trainer, const struct BackpropTrainingStats* stats, struct BackpropNetwork* network, const BackpropTrainingSet_t* training_set, BACKPROP_FLOAT_T error); 
+void BackpropTrainer_PrintfAfterTrainSuccess(struct BackpropTrainer* trainer, const struct BackpropTrainingStats* stats, struct BackpropNetwork* network, const BackpropTrainingSet_t* training_set, BACKPROP_FLOAT_T error);
 
 
-void BackpropTrainer_PutsAfterTrainSuccess(struct BackpropTrainer* trainer, const struct BackpropTrainingStats* stats, struct BackpropNetwork* network, const BackpropTrainingSet_t* training_set, BACKPROP_FLOAT_T error); 
+void BackpropTrainer_PutsAfterTrainSuccess(struct BackpropTrainer* trainer, const struct BackpropTrainingStats* stats, struct BackpropNetwork* network, const BackpropTrainingSet_t* training_set, BACKPROP_FLOAT_T error);
 
-void BackpropTrainer_PrintfAfterTrainFailure(struct BackpropTrainer* trainer, const struct BackpropTrainingStats* stats, struct BackpropNetwork* network, const BackpropTrainingSet_t* training_set, BACKPROP_FLOAT_T error);  
+void BackpropTrainer_PrintfAfterTrainFailure(struct BackpropTrainer* trainer, const struct BackpropTrainingStats* stats, struct BackpropNetwork* network, const BackpropTrainingSet_t* training_set, BACKPROP_FLOAT_T error);
 
 
-void BackpropTrainer_PutsAfterTrainFailure(struct BackpropTrainer* trainer, const struct BackpropTrainingStats* stats, struct BackpropNetwork* network, const BackpropTrainingSet_t* training_set, BACKPROP_FLOAT_T error);  
+void BackpropTrainer_PutsAfterTrainFailure(struct BackpropTrainer* trainer, const struct BackpropTrainingStats* stats, struct BackpropNetwork* network, const BackpropTrainingSet_t* training_set, BACKPROP_FLOAT_T error);
 
 
 

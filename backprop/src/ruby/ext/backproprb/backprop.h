@@ -116,24 +116,7 @@ typedef struct BackpropFloatArray
 
 
 
-/**
- * Backprop Layer structure.
- *
- * y = sig(W * x)
- *
- */
-typedef struct BackpropLayer
-{
-	BACKPROP_SIZE_T x_count; ///< Number of inputs to each neuron (M).
-	BACKPROP_SIZE_T y_count; ///< Number of neurons in the layer (N).
 
-	BACKPROP_FLOAT_T* W; ///< Pointer to weight matrix  [NxM].
-	BACKPROP_FLOAT_T* g; ///< Pointer to layer gradient [Nx1].
-
-	BACKPROP_FLOAT_T* x; ///< Pointer to layer input    [Mx1].
-	BACKPROP_FLOAT_T* y; ///< Pointer to layer output   [Nx1].
-
-} BackpropLayer_t;
 
 
 
@@ -150,6 +133,13 @@ typedef struct BackpropLayersArray
 
 
 
+size_t BackpropLayersArray_GetCount(const struct BackpropLayersArray* self);
+
+
+const struct BackpropLayer* BackpropLayersArray_GetConstLayer(const struct BackpropLayersArray* self, size_t i);
+
+
+struct BackpropLayer* BackpropLayersArray_GetLayer(struct BackpropLayersArray* self, size_t i);
 
 
 
@@ -277,7 +267,73 @@ BACKPROP_SIZE_T Backprop_RandomArrayIndex(size_t lower, size_t upper);
 
 
 
+/*-------------------------------------------------------------------*
+ *
+ * LAYER MANIPULATION FUNCTIONS
+ *
+ * These are for manipulating individual layers.
+ *
+ *-------------------------------------------------------------------*/
 
+struct BackpropLayer;
+typedef struct BackpropLayer BackpropLayer_t;
+
+
+struct BackpropLayer* BackpropLayer_Malloc(BACKPROP_SIZE_T x_size, BACKPROP_SIZE_T y_size);
+
+void BackpropLayer_Free(struct BackpropLayer* layer);
+
+BACKPROP_SIZE_T BackpropLayer_GetSize(const BackpropLayer_t* self);
+
+
+BACKPROP_SIZE_T BackpropLayer_GetXCount(const struct BackpropLayer* self);
+
+BACKPROP_FLOAT_T BackpropLayer_GetAtX(const struct BackpropLayer* self, size_t i);
+
+void BackpropLayer_SetAtX(struct BackpropLayer* self, BACKPROP_SIZE_T i, BACKPROP_FLOAT_T value);
+
+
+BACKPROP_SIZE_T BackpropLayer_GetYCount(const struct BackpropLayer* self);
+
+BACKPROP_FLOAT_T BackpropLayer_GetAtY(const struct BackpropLayer* self, size_t i);
+
+void BackpropLayer_SetAtY(struct BackpropLayer* self, size_t i, BACKPROP_FLOAT_T value);
+
+
+BACKPROP_FLOAT_T BackpropLayer_GetAtG(const struct BackpropLayer* self, size_t i);
+
+void BackpropLayer_SetAtG(const struct BackpropLayer* self, size_t i, BACKPROP_FLOAT_T value);
+
+
+
+BACKPROP_FLOAT_T BackpropLayer_GetAtW(const struct BackpropLayer* self, size_t i);
+
+void BackpropLayer_SetAtW(struct BackpropLayer* self, size_t i, BACKPROP_FLOAT_T value);
+
+BACKPROP_FLOAT_T* BackpropLayer_GetW(struct BackpropLayer* self);
+
+const BACKPROP_FLOAT_T* BackpropLayer_GetConstW(const struct BackpropLayer* self);
+
+BACKPROP_SIZE_T BackpropLayer_GetWeightsCount(const BackpropLayer_t* self);
+
+BACKPROP_FLOAT_T BackpropLayer_GetWeightsSum(const BackpropLayer_t* self);
+
+BACKPROP_FLOAT_T BackpropLayer_GetWeightsMean(const BackpropLayer_t* self);
+
+BACKPROP_FLOAT_T BackpropLayer_GetWeightsStdDev(const BackpropLayer_t* self);
+
+
+void BackpropLayer_Activate(BackpropLayer_t* self);
+
+void BackpropLayer_Randomize(BackpropLayer_t* self, BACKPROP_FLOAT_T gain);
+
+void BackpropLayer_Identity(BackpropLayer_t* self);
+
+void BackpropLayer_Prune(BackpropLayer_t* self, BACKPROP_FLOAT_T threshold);
+
+void BackpropLayer_Round(BackpropLayer_t* self);
+
+void BackpropLayer_Reset(BackpropLayer_t* self);
 
 
 
@@ -357,17 +413,22 @@ size_t BackpropNetwork_GetOutputCStr(const struct BackpropNetwork* self, char* s
 
 /** Get pointer to first layer in the network.  For 1 layer networks, this is also the last layer.
  */
-BackpropLayer_t* BackpropNetwork_GetFirstLayer(struct BackpropNetwork* self);
+struct BackpropLayer* BackpropNetwork_GetFirstLayer(struct BackpropNetwork* self);
 
 
 /** Get pointer to last layer in the network.  For 1 layer networks, this is also the first layer.
  */
-BackpropLayer_t* BackpropNetwork_GetLastLayer(struct BackpropNetwork* self);
+struct BackpropLayer* BackpropNetwork_GetLastLayer(struct BackpropNetwork* self);
 
 
 /** Get const pointer to last layer in the network.  For 1 layer networks, this is also the first layer.
  */
-const BackpropLayer_t* BackpropNetwork_GetConstLastLayer(const struct BackpropNetwork* self);
+const struct BackpropLayer* BackpropNetwork_GetConstLastLayer(const struct BackpropNetwork* self);
+
+
+/** Set each layer to identity matrix.
+ */
+void BackpropNetwork_Identity(struct BackpropNetwork* self);
 
 
 /** Randomize weights for a network.
@@ -417,7 +478,7 @@ const BackpropByteArray_t* BackpropNetwork_GetX(const struct BackpropNetwork* se
 BACKPROP_SIZE_T BackpropNetwork_GetXSize(const struct BackpropNetwork* self);
 
 
-/** Get read-only pointer the network input.
+/** Get read-only pointer the network output.
  */
 const BackpropByteArray_t* BackpropNetwork_GetY(const struct BackpropNetwork* self);
 
@@ -841,12 +902,42 @@ BACKPROP_FLOAT_T BackpropTrainer_ExerciseConst(struct BackpropTrainer* self, Bac
 
 
 
+BACKPROP_FLOAT_T BackpropTrainer_TeachPair( BackpropTrainer_t* trainer
+                                          , BackpropTrainingStats_t* stats
+                                          , struct BackpropNetwork* network
+                                          , const BACKPROP_BYTE_T* x, BACKPROP_SIZE_T x_size
+                                          , const BACKPROP_BYTE_T* y_desired, BACKPROP_SIZE_T y_desired_size);
+
+
 /** Use Backpropagation learning to train network for a given x:y pair.
  */
-BACKPROP_FLOAT_T BackpropTrainer_TrainPair( struct BackpropTrainer* self, BackpropTrainingStats_t* stats
+BACKPROP_FLOAT_T BackpropTrainer_TrainPair( struct BackpropTrainer* self
+                                          , BackpropTrainingStats_t* stats
                                           , struct BackpropNetwork* network
                                           , const BACKPROP_BYTE_T* x, size_t x_size
                                           , const BACKPROP_BYTE_T* y, size_t y_size);
+
+
+struct BackpropTrainingSession
+{
+  struct BackpropNetwork* network;
+  const BackpropTrainingSet_t* training_set;
+  BackpropTrainingStats_t* stats;
+  BackpropExerciseStats_t* exercise_stats;
+};
+
+
+BACKPROP_FLOAT_T BackpropTrainer_TrainSet( BackpropTrainer_t* trainer
+                                         , BackpropTrainingStats_t* stats
+                                         , struct BackpropNetwork* network
+                                         , const BackpropTrainingSet_t* training_set);
+
+
+BACKPROP_FLOAT_T BackpropTrainer_TrainBatch( BackpropTrainer_t* trainer
+                                           , BackpropTrainingStats_t* stats
+                                           , BackpropExerciseStats_t* exercise_stats
+                                           , struct BackpropNetwork* network
+                                           , const BackpropTrainingSet_t* training_set);
 
 
 /** Use Backpropagation learning to train network for the given training set.

@@ -443,17 +443,18 @@ void Backprop_PutsOnMallocFail(size_t size)
 #pragma mark BackpropLayer
 
 
-void BackpropLayer_PrintfInput(const BackpropLayer_t* self)
+void BackpropLayer_PrintfInput(const struct BackpropLayer* self)
 {
   BACKPROP_IO_ASSERT(self);
 
   printf("[");
 
-  printf("%f", self->x[0]);
+  printf("%f", BackpropLayer_GetX(self, 0));
 
-  for (size_t i = 1; i < self->x_count; ++i)
+  const size_t x_count = BackpropLayer_GetXCount(self);
+  for (size_t i = 1; i < x_count; ++i)
   {
-    printf(", %f", self->x[i]);
+    printf(", %f", BackpropLayer_GetX(self, i));
   }
 
   puts("]");
@@ -462,17 +463,18 @@ void BackpropLayer_PrintfInput(const BackpropLayer_t* self)
 
 
 
-void BackpropLayer_PrintfOutput(const BackpropLayer_t* self)
+void BackpropLayer_PrintfOutput(const struct BackpropLayer* self)
 {
   BACKPROP_IO_ASSERT(self);
 
   printf("[");
 
-  printf("%f", self->y[0]);
+  printf("%f", BackpropLayer_GetY(self, 0));
 
-  for (size_t i = 1; i < self->y_count; ++i)
+  const size_t y_count = BackpropLayer_GetYCount(self);
+  for (size_t i = 1; i < y_count; ++i)
   {
-    printf(", %f", self->y[i]);
+    printf(", %f", BackpropLayer_GetY(self, i));
   }
 
   puts("]");
@@ -481,18 +483,19 @@ void BackpropLayer_PrintfOutput(const BackpropLayer_t* self)
 
 
 
-size_t BackpropLayer_FprintfWeights(FILE* file, const BackpropLayer_t* self)
+size_t BackpropLayer_FprintfWeights(FILE* file, const struct BackpropLayer* self)
 {
   BACKPROP_IO_ASSERT(file);
   BACKPROP_IO_ASSERT(self);
   {
     size_t fprintf_size = fprintf(file, "[ ");
 
+    const size_t x_count = BackpropLayer_GetXCount(self);
     size_t newline_count = CHAR_BIT;
-    size_t W_row_count = self->x_count * CHAR_BIT;
-    size_t count = (self->x_count) * (self->y_count);
+    size_t W_row_count = x_count * CHAR_BIT;
+    size_t count = x_count * BackpropLayer_GetYCount(self);
 
-    BACKPROP_FLOAT_T* W = self->W;
+    const BACKPROP_FLOAT_T* W = BackpropLayer_GetConstW(self);
 
     if (*W >= 0)
     {
@@ -530,7 +533,7 @@ size_t BackpropLayer_FprintfWeights(FILE* file, const BackpropLayer_t* self)
       --W_row_count;
       if (!W_row_count)
       {
-        W_row_count = self->x_count * CHAR_BIT;
+        W_row_count = x_count * CHAR_BIT;
         fprintf_size += fprintf(file, "\n");
       }
 
@@ -545,7 +548,7 @@ size_t BackpropLayer_FprintfWeights(FILE* file, const BackpropLayer_t* self)
 
 
 
-void BackpropLayer_PrintfWeights(const BackpropLayer_t* self)
+void BackpropLayer_PrintfWeights(const struct BackpropLayer* self)
 {
   BACKPROP_IO_ASSERT(self);
 
@@ -555,7 +558,7 @@ void BackpropLayer_PrintfWeights(const BackpropLayer_t* self)
 
 
 
-void BackpropLayer_PutsWeights(const BackpropLayer_t* self)
+void BackpropLayer_PutsWeights(const struct BackpropLayer* self)
 {
   BACKPROP_IO_ASSERT(self);
 
@@ -616,12 +619,12 @@ void BackpropLayer_PutsWeights(const BackpropLayer_t* self)
 
 
 
-static size_t BackpropLayer_LoadWeights(BackpropLayer_t* self, FILE *file)
+static size_t BackpropLayer_LoadWeights(struct BackpropLayer* self, FILE *file)
 {
   BACKPROP_IO_ASSERT(self);
   BACKPROP_IO_ASSERT(file);
   {
-    BACKPROP_FLOAT_T* W = self->W;
+    BACKPROP_FLOAT_T* W = BackpropLayer_GetW(self);
     BACKPROP_IO_ASSERT(W);
     {
       size_t c_count = fskipspace(file);
@@ -630,7 +633,10 @@ static size_t BackpropLayer_LoadWeights(BackpropLayer_t* self, FILE *file)
 
       if (c_count)
       {
-        c_count += json_fscanarray_float(file, W, self->x_count * self->y_count);
+        const BACKPROP_SIZE_T x_count = BackpropLayer_GetXCount(self);
+        const BACKPROP_SIZE_T y_count = BackpropLayer_GetYCount(self);
+
+        c_count += json_fscanarray_float(file, W, x_count * y_count);
         c_count += fskipstr(file, "]");
         c_count += fskipspace(file);
       }
@@ -716,11 +722,12 @@ void BackpropNetwork_PrintfLayersInput(const struct BackpropNetwork* self)
 
     const size_t x_size = BackpropNetwork_GetX(self)->size;
 
-    printf("%f", layers->data[0].x[i]);
+    const struct BackpropLayer* layer = BackpropLayersArray_GetConstLayer(layers, 0);
+    printf("%f", BackpropLayer_GetAtX(layer, i));
 
     while (++i < x_size)
     {
-      printf(", %f", layers->data[0].x[i]);
+      printf(", %f", BackpropLayer_GetAtX(layer, i));
     }
   }
 
@@ -746,9 +753,9 @@ void BackpropNetwork_PrintfLayersOutput(const struct BackpropNetwork* self)
   BACKPROP_IO_ASSERT(self);
   {
     const struct BackpropLayersArray* layers = BackpropNetwork_GetLayers(self);
-    const BackpropLayer_t* last_layer = BackpropNetwork_GetConstLastLayer(self);
+    const struct BackpropLayer* last_layer = BackpropNetwork_GetConstLastLayer(self);
 
-    size_t last_index = layers->count;
+    size_t last_index = BackpropLayersArray_GetCount(layers);
 
     if (last_index)
     {
@@ -762,11 +769,11 @@ void BackpropNetwork_PrintfLayersOutput(const struct BackpropNetwork* self)
       const size_t size = y_size * CHAR_BIT;
       size_t i = 0;
 
-      printf("%f", last_layer->y[i]);
+      printf("%f", BackpropLayer_GetAtY(last_layer, i));
 
       while (++i < size)
       {
-        printf(", %f", last_layer->y[i]);
+        printf(", %f", BackpropLayer_GetAtY(last_layer, i));
       }
     }
 
@@ -799,11 +806,13 @@ void BackpropNetwork_PrintfOutput(const struct BackpropNetwork* self)
     BACKPROP_SIZE_T y_size = BackpropNetwork_GetYSize(self);
     if (y_size)
     {
-      printf("0x%02X", y->data[0]);
+      printf("%02X", y->data[0]);
+      ++y;
 
       for(size_t i = 1; i < y_size; ++i)
       {
-        printf(", 0x%02X", y->data[i]);
+        printf(", %02X", y->data[i]);
+        ++y;
       }
     }
   }
@@ -862,12 +871,12 @@ size_t BackpropNetwork_FprintfWeights(FILE* file, const struct BackpropNetwork* 
 
     fprintf_size += fprintf(file, "[\n");
 
-    fprintf_size += BackpropLayer_FprintfWeights(file, &layers->data[0]);
+    fprintf_size += BackpropLayer_FprintfWeights(file, BackpropLayersArray_GetConstLayer(layers, 0));
 
     for(size_t i = 1; i < layers->count; ++i)
     {
       fprintf_size += fprintf(file, ",\n");
-      fprintf_size += BackpropLayer_FprintfWeights(file, &layers->data[i]);
+      fprintf_size += BackpropLayer_FprintfWeights(file, BackpropLayersArray_GetConstLayer(layers, i));
     }
     fprintf_size += fprintf(file, "]\n");
 
@@ -973,7 +982,7 @@ size_t BackpropNetwork_LoadWeights(struct BackpropNetwork* self, const char* fil
 
       for(size_t i = 0; i < layers_count; ++i)
       {
-        c_count += BackpropLayer_LoadWeights(network_layers->data + i, file);
+        c_count += BackpropLayer_LoadWeights(BackpropLayersArray_GetConstLayer(network_layers, i), file);
         c_count += json_fskipcomma(file);
       }
 
