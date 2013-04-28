@@ -33,7 +33,7 @@ static VALUE cBackpropEvolutionStats = Qnil;
 static VALUE cBackpropEvolver = Qnil;
 
 
-#define USE_BACKPROPRB_TRACE
+//#define USE_BACKPROPRB_TRACE
 
 #if defined(USE_BACKPROPRB_TRACE)
 #define BACKPROPRB_TRACE()    printf("%s:%d\t%s\n", __FILE__, __LINE__, __FUNCTION__)
@@ -427,7 +427,11 @@ static VALUE CBackpropLayer_get_x_count(VALUE self)
 
   BackpropLayer_t* layer = 0;
   Data_Get_Struct(self, BackpropLayer_t, layer);
+
+#if USE_BACKPROPRB_VERBOSE
   printf("layer = %p\n", layer);
+#endif
+
   if (layer)
   {
     return INT2NUM(BackpropLayer_GetXCount(layer));
@@ -578,14 +582,8 @@ static VALUE CBackpropLayer_new(VALUE klass, VALUE x_count_val, VALUE y_count_va
   BACKPROP_SIZE_T x_count = NUM2UINT(x_count_val);
   BACKPROP_SIZE_T y_count = NUM2UINT(y_count_val);
 
-  printf("x_count = %ld, y_count = %ld\n", x_count, y_count);
-
   // allocate structure
   struct BackpropLayer* layer = BackpropLayer_Malloc(x_count, y_count);
-
-  printf("new layer = %p\n", layer);
-  printf("layer->x_size = %ld\n", BackpropLayer_GetXCount(layer));
-  printf("layer->y_size = %ld\n", BackpropLayer_GetYCount(layer));
 
   // wrap it in a ruby object, this will cause GC to call free function
   VALUE tdata = Data_Wrap_Struct(klass, 0, CBackpropLayer_free, layer);

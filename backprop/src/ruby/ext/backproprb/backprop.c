@@ -439,19 +439,25 @@ static void BackpropLayer_FreeInternal(BackpropLayer_t* layer)
     return;
   }
 
+#ifdef USE_BACKPROP_VERBOSE
   printf("calculating\n");
+#endif
 
   const size_t x_count = layer->x_count;
   const size_t y_count = layer->y_count;
 
+#ifdef USE_BACKPROP_VERBOSE
   printf("%ld, %ld\n", x_count, y_count);
+#endif
 
   const size_t x_size = BackpropLayer_x_MallocSize(x_count, y_count);
   const size_t y_size = BackpropLayer_y_MallocSize(x_count, y_count);
   const size_t W_size = BackpropLayer_W_MallocSize(x_count, y_count);
   const size_t g_size = BackpropLayer_g_MallocSize(x_count, y_count);
 
+#ifdef USE_BACKPROP_VERBOSE
   printf("%ld, %ld, %ld, %ld\n", x_size, y_size, W_size, g_size);
+#endif
 
   Backprop_Free(layer->x, x_size);
   Backprop_Free(layer->y, y_size);
@@ -469,14 +475,18 @@ struct BackpropLayer* BackpropLayer_Malloc(BACKPROP_SIZE_T x_size, BACKPROP_SIZE
 
   struct BackpropLayer* ptr = Backprop_Malloc(sizeof(struct BackpropLayer));
 
+#ifdef USE_BACKPROP_VERBOSE
   printf("malloc layer = %p\n", ptr);
   printf("malloc layer x_count = %ld\n", ptr->x_count);
   printf("malloc layer y_count = %ld\n", ptr->y_count);
+#endif
 
   BackpropLayer_MallocInternal(ptr, x_size, y_size);
 
+#ifdef USE_BACKPROP_VERBOSE
   printf("malloc layer x_count = %ld\n", ptr->x_count);
   printf("malloc layer y_count = %ld\n", ptr->y_count);
+#endif
 
   return ptr;
 }
@@ -490,7 +500,9 @@ void BackpropLayer_Free(struct BackpropLayer* layer)
 
   BACKPROP_ASSERT(layer);
 
+#ifdef USE_BACKPROP_VERBOSE
   printf("layer = %p\n", layer);
+#endif
 
   BackpropLayer_FreeInternal(layer);
   Backprop_Free(layer, sizeof(struct BackpropLayer));
