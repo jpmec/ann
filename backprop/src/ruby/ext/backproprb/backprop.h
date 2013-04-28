@@ -920,7 +920,6 @@ BACKPROP_FLOAT_T BackpropTrainer_TrainPair( struct BackpropTrainer* self
 
 struct BackpropTrainingSession
 {
-  struct BackpropNetwork* network;
   const BackpropTrainingSet_t* training_set;
   BackpropTrainingStats_t* stats;
   BackpropExerciseStats_t* exercise_stats;
@@ -928,25 +927,20 @@ struct BackpropTrainingSession
 
 
 BACKPROP_FLOAT_T BackpropTrainer_TrainSet( BackpropTrainer_t* trainer
-                                         , BackpropTrainingStats_t* stats
                                          , struct BackpropNetwork* network
-                                         , const BackpropTrainingSet_t* training_set);
+                                         , struct BackpropTrainingSession* session);
 
 
 BACKPROP_FLOAT_T BackpropTrainer_TrainBatch( BackpropTrainer_t* trainer
-                                           , BackpropTrainingStats_t* stats
-                                           , BackpropExerciseStats_t* exercise_stats
                                            , struct BackpropNetwork* network
-                                           , const BackpropTrainingSet_t* training_set);
+                                           , struct BackpropTrainingSession* session);
 
 
 /** Use Backpropagation learning to train network for the given training set.
  */
 BACKPROP_FLOAT_T BackpropTrainer_Train( struct BackpropTrainer* trainer
-                                      , BackpropTrainingStats_t* stats
-                                      , BackpropExerciseStats_t* exercise_stats
                                       , struct BackpropNetwork* network
-                                      , const BackpropTrainingSet_t* training_set);
+                                      , struct BackpropTrainingSession* session);
 
 
 /** Use the BackpropTrainer to prune the network.

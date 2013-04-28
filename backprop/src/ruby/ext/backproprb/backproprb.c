@@ -2011,10 +2011,17 @@ static VALUE CBackpropTrainer_train_set( VALUE trainer_val
     return Qnil;
   }
 
+  struct BackpropTrainingSession session =
+  {
+    .training_set = training_set,
+    .stats = training_stats,
+    .exercise_stats = NULL,
+  };
+
+
   BACKPROP_FLOAT_T error = BackpropTrainer_TrainSet( trainer
-                                                   , training_stats
                                                    , network
-                                                   , training_set);
+                                                   , &session);
 
   return rb_float_new(error);
 }
@@ -2078,11 +2085,17 @@ static VALUE CBackpropTrainer_train_batch( VALUE trainer_val
     return Qnil;
   }
 
+  struct BackpropTrainingSession session =
+  {
+    .training_set = training_set,
+    .stats = training_stats,
+    .exercise_stats = exercise_stats,
+  };
+
+
   BACKPROP_FLOAT_T error = BackpropTrainer_TrainBatch( trainer
-                                                     , training_stats
-                                                     , exercise_stats
                                                      , network
-                                                     , training_set);
+                                                     , &session);
 
   return rb_float_new(error);
 }
@@ -2141,12 +2154,16 @@ static VALUE CBackpropTrainer_train( VALUE trainer_val
     return Qnil;
   }
 
+  struct BackpropTrainingSession session =
+  {
+    .training_set = training_set,
+    .stats = training_stats,
+    .exercise_stats = exercise_stats,
+  };
 
   error = BackpropTrainer_Train( trainer
-                               , training_stats
-                               , exercise_stats
                                , network
-                               , training_set);
+                               , &session);
 
   return rb_float_new(error);
 }
