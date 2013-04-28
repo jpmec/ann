@@ -1375,8 +1375,39 @@ void BackpropTrainer_PrintfAfterInput( const struct BackpropTrainer* trainer
                                      , const BACKPROP_BYTE_T* x
                                      , BACKPROP_SIZE_T x_size)
 {
- // TODO
+  printf("{ input: { x_size: %ld } }\n", x_size);
 }
+
+
+
+
+void BackpropTrainer_PrintfAfterActivate( const struct BackpropTrainer* trainer
+                                        , const struct BackpropNetwork* network)
+{
+  printf("{ after_activate: {} }\n");
+}
+
+
+
+
+void BackpropTrainer_PrintfAfterComputeError( const struct BackpropTrainer* trainer
+                                            , const struct BackpropNetwork* network
+                                            , BACKPROP_FLOAT_T error)
+{
+  printf("{ after_compute_error: {error: %f} }\n", error);
+}
+
+
+
+
+void BackpropTrainer_PrintfAfterComputeLastLayerError( const struct BackpropTrainer* trainer
+                                                     , const struct BackpropNetwork* network
+                                                     , BACKPROP_FLOAT_T error)
+{
+  printf("{ after_compute_last_layer_error: {error: %lf} }\n", error);
+}
+
+
 
 
 void BackpropTrainer_PrintfAfterTeachPair( const struct BackpropTrainer* trainer
@@ -1391,7 +1422,7 @@ void BackpropTrainer_PrintfAfterTeachPair( const struct BackpropTrainer* trainer
   BACKPROP_IO_ASSERT(stats);
   BACKPROP_IO_ASSERT(network);
 
-  printf("{ taught_pair: { error: %f, weight_correction: %f }}", error, weight_correction);
+  printf("{ taught_pair: { error: %f, weight_correction: %f }}\n", error, weight_correction);
 
 }
 
@@ -1587,7 +1618,10 @@ void BackpropTrainer_SetToVerboseIO(struct BackpropTrainer* trainer)
     struct BackpropTrainerEvents* events = BackpropTrainer_GetEvents(trainer);
 
     events->AfterInput = BackpropTrainer_PrintfAfterInput;
-    //events->AfterActivate = BackpropTainer_PrintfAfterActivate;
+    events->AfterActivate = BackpropTrainer_PrintfAfterActivate;
+    events->AfterComputeError = BackpropTrainer_PrintfAfterComputeError;
+    events->AfterComputeLastLayerError = BackpropTrainer_PrintfAfterComputeLastLayerError;
+
     //events->AfterExercisePair = BackpropTrainer_PrintfAfterExercisePair;
     //events->AfterExercise = BackpropTrainer_PrintfAfterExercise;
     //
@@ -1614,7 +1648,7 @@ void BackpropTrainer_SetToVerboseIO(struct BackpropTrainer* trainer)
     //events->AfterTrainPair = BackpropTrainer_PrintfAfterTrainPair;
     //
     //events->BeforeTeachPair = BackpropTrainer_PrintfBeforeTeachPair;
-    //events->AfterTeachPair = BackpropTrainer_PrintfAfterTeachPair;
+    events->AfterTeachPair = BackpropTrainer_PrintfAfterTeachPair;
   }
 }
 

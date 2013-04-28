@@ -496,10 +496,11 @@ class CBackproprbTrainerTestCase  < Test::Unit::TestCase
 
 
   def test__teach_pair
+    puts "#{self.class}_#{__method__}"
     filename = "#{self.class}_#{__method__}.txt"
 
     @network = Backproprb::Network.new({"x_size"=>1, "y_size"=>1, "layer_count"=>2})
-    @network.randomize 1, 0
+    @network.randomize 4, 0
     @network.from_file filename
 
     @training_stats = Backproprb::TrainingStats.new

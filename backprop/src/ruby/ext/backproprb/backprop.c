@@ -2026,6 +2026,51 @@ static BACKPROP_FLOAT_T BackpropTrainer_ComputeByteError(BACKPROP_BYTE_T byte1, 
 
 
 
+static BACKPROP_FLOAT_T BackpropTrainer_ComputeLastLayerError( const struct BackpropNetwork* self
+                                                             , const const BACKPROP_BYTE_T* yd
+                                                             , BACKPROP_SIZE_T yd_size)
+{
+  BACKPROP_TRACE();
+
+  BACKPROP_FLOAT_T error = 0.0;
+
+  BACKPROP_ASSERT(self);
+  {
+    const BackpropLayer_t* last_layer = BackpropNetwork_GetConstLastLayer(self);
+    BACKPROP_ASSERT(last_layer);
+    {
+      // Input each bit value
+      BACKPROP_FLOAT_T* y = last_layer->y;
+      BACKPROP_ASSERT((self->y.size * CHAR_BIT) == last_layer->y_count);
+
+      for (size_t i = 0; i < yd_size; ++i)
+      {
+        // convert bits to float
+        BACKPROP_BYTE_T bits = *yd;
+        BACKPROP_SIZE_T bit_shift = 0;
+
+        size_t b = CHAR_BIT;
+        do
+        {
+          const BACKPROP_FLOAT_T e = (0 < (bits & 1)) - *y;
+          error += fabs(e);
+
+          bits = bits >> 1;
+          ++y;
+
+        } while (--b);
+
+        ++yd;
+      }
+    }
+  }
+
+  return error;
+}
+
+
+
+
 static BACKPROP_FLOAT_T BackpropTrainer_ComputeError(const struct BackpropNetwork* network, const BACKPROP_BYTE_T* yd, BACKPROP_SIZE_T yd_size)
 {
   BACKPROP_TRACE();
@@ -2521,7 +2566,7 @@ BACKPROP_FLOAT_T BackpropTrainer_ExerciseConst(BackpropTrainer_t* trainer, Backp
 
       if (trainer->events.AfterActivate)
       {
-        trainer->events.AfterActivate(network);
+        trainer->events.AfterActivate(trainer, network);
       }
 
       error += BackpropTrainer_ComputeError(network, y, training_set->dims.y_size);
@@ -2602,10 +2647,22 @@ BACKPROP_FLOAT_T BackpropTrainer_TeachPair( BackpropTrainer_t* trainer
 
     if (trainer->events.AfterActivate)
     {
-      trainer->events.AfterActivate(network);
+      trainer->events.AfterActivate(trainer, network);
+    }
+
+    BACKPROP_FLOAT_T last_layer_error = BackpropTrainer_ComputeLastLayerError(network, y_desired, y_desired_size);
+
+    if (trainer->events.AfterComputeLastLayerError)
+    {
+      trainer->events.AfterComputeLastLayerError(trainer, network, last_layer_error);
     }
 
     error = BackpropTrainer_ComputeError(network, y_desired, y_desired_size);
+
+    if (trainer->events.AfterComputeError)
+    {
+      trainer->events.AfterComputeError(trainer, network, error);
+    }
 
     if (error < trainer->error_tolerance)
     {
@@ -2737,10 +2794,22 @@ BACKPROP_FLOAT_T BackpropTrainer_TeachPair( BackpropTrainer_t* trainer
 
     if (trainer->events.AfterActivate)
     {
-      trainer->events.AfterActivate(network);
+      trainer->events.AfterActivate(trainer, network);
+    }
+
+    last_layer_error = BackpropTrainer_ComputeLastLayerError(network, y_desired, y_desired_size);
+
+    if (trainer->events.AfterComputeLastLayerError)
+    {
+      trainer->events.AfterComputeLastLayerError(trainer, network, last_layer_error);
     }
 
     error = BackpropTrainer_ComputeError(network, y_desired, y_desired_size);
+
+    if (trainer->events.AfterComputeError)
+    {
+      trainer->events.AfterComputeError(trainer, network, error);
+    }
 
     if (trainer->events.AfterTeachPair)
     {

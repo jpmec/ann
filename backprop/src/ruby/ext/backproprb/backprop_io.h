@@ -204,7 +204,17 @@ void BackpropTrainer_PrintfAfterInput( const struct BackpropTrainer* trainer
                                      , const BACKPROP_BYTE_T* x
                                      , BACKPROP_SIZE_T x_size);
 
-void BackpropTainer_PrintfAfterActivate(struct BackpropTrainer* trainer);
+void BackpropTrainer_PrintfAfterActivate( const struct BackpropTrainer* trainer
+                                        , const struct BackpropNetwork* network);
+
+void BackpropTrainer_PrintfAfterComputeError( const struct BackpropTrainer* trainer
+                                            , const struct BackpropNetwork* network
+                                            , BACKPROP_FLOAT_T error);
+
+void BackpropTrainer_PrintfAfterComputeLastLayerError( const struct BackpropTrainer* trainer
+                                                     , const struct BackpropNetwork* network
+                                                     , BACKPROP_FLOAT_T error);
+
 void BackpropTrainer_PrintfAfterExercisePair(struct BackpropTrainer* trainer);
 void BackpropTrainer_PrintfAfterExercise(struct BackpropTrainer* trainer);
 
