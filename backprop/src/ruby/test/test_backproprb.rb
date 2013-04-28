@@ -35,9 +35,7 @@ class BackproprbLayerTestCase < Test::Unit::TestCase
     @test_x_count = 1
     @test_y_count = 1
 
-    puts "creating layer"
     @sut = Backproprb::Layer.new @test_x_count, @test_y_count
-    puts "created layer"
   end
 
   def test_setup
@@ -526,6 +524,8 @@ class CBackproprbTrainerTestCase  < Test::Unit::TestCase
 
     @training_stats = Backproprb::TrainingStats.new
     @sut = Backproprb::Trainer.new @network
+
+    @sut.set_to_verbose_io
 
     result = @sut.train_pair @training_stats, @network, "a", "b"
 

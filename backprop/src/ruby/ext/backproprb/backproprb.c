@@ -2477,6 +2477,22 @@ static VALUE CBackpropTrainer_set_batch_prune_rate(VALUE self, VALUE value)
 
 
 
+static VALUE CBackpropTrainer_set_to_verbose_io(VALUE self)
+{
+  BACKPROPRB_TRACE();
+  {
+    BackpropTrainer_t* trainer;
+    Data_Get_Struct(self, BackpropTrainer_t, trainer);
+
+    BackpropTrainer_SetToVerboseIO(trainer);
+
+    return self;
+  }
+}
+
+
+
+
 static VALUE CBackpropTrainer_to_hash(VALUE self)
 {
   BACKPROPRB_TRACE();
@@ -2976,6 +2992,7 @@ void Init_backproprb()
 
   rb_define_method(cBackpropTrainer, "to_hash", CBackpropTrainer_to_hash, 0);
 
+  rb_define_method(cBackpropTrainer, "set_to_verbose_io", CBackpropTrainer_set_to_verbose_io, 0);
 
   cBackpropEvolutionStats = rb_define_class_under(cBackproprb, "EvolutionStats", rb_cObject);
   rb_define_singleton_method(cBackpropEvolutionStats, "new", CBackpropEvolutionStats_new, 0);

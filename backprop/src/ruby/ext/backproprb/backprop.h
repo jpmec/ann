@@ -700,10 +700,18 @@ struct BackpropTrainer;
 typedef struct BackpropTrainer BackpropTrainer_t;
 
 
+/** Structure of function pointers that are called when specific events happen.
+ *  Pointer value may be NULL if no extra work is required for an event.
+ */
 typedef struct BackpropTrainerEvents
 {
-  /* Callback pointers */
-  void (*AfterInput)(const struct BackpropNetwork*); ///< Called after trainer calls BackpropNetwork_Input.
+
+   ///< Called after trainer calls BackpropNetwork_Input.
+  void (*AfterInput)( const struct BackpropTrainer* trainer
+                    , const struct BackpropNetwork* network
+                    , const BACKPROP_BYTE_T* x
+                    , BACKPROP_SIZE_T x_size);
+
   void (*AfterActivate)(const struct BackpropNetwork*); ///< Called after trainer calls BackpropNetwork_Activate.
   void (*AfterExercisePair)(const struct BackpropNetwork*, BACKPROP_FLOAT_T error); ///< Called after trainer exercises a training set x:y pair.
   void (*AfterExercise)(const struct BackpropNetwork*, BACKPROP_FLOAT_T error); ///< Called after trainer exercises a training set x:y pair.

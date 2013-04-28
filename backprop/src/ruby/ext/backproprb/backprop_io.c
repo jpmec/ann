@@ -1370,7 +1370,13 @@ size_t BackpropTrainingSet_Save(const BackpropTrainingSet_t* self, const char* f
 
 #pragma mark BackpropTrainer
 
-
+void BackpropTrainer_PrintfAfterInput( const struct BackpropTrainer* trainer
+                                     , const struct BackpropNetwork* network
+                                     , const BACKPROP_BYTE_T* x
+                                     , BACKPROP_SIZE_T x_size)
+{
+ // TODO
+}
 
 
 void BackpropTrainer_PrintfAfterTeachPair( const struct BackpropTrainer* trainer
@@ -1447,7 +1453,13 @@ void BackpropTrainer_AfterTrainBatch(struct BackpropTrainer* trainer, const stru
 
 
 
-void BackpropTrainer_PrintfAfterStagnateSet(struct BackpropTrainer* trainer, const struct BackpropTrainingStats* stats, struct BackpropNetwork* network, const BackpropTrainingSet_t* training_set, BACKPROP_SIZE_T batches, BACKPROP_SIZE_T stagnate_sets, BACKPROP_FLOAT_T error)
+void BackpropTrainer_PrintfAfterStagnateSet( struct BackpropTrainer* trainer
+                                           , const struct BackpropTrainingStats* stats
+                                           , struct BackpropNetwork* network
+                                           , const BackpropTrainingSet_t* training_set
+                                           , BACKPROP_SIZE_T batches
+                                           , BACKPROP_SIZE_T stagnate_sets
+                                           , BACKPROP_FLOAT_T error)
 {
   printf("stagnate_set: {set: %ld, batch: %ld, error: %f }", stagnate_sets, batches, error);
 }
@@ -1465,7 +1477,12 @@ void BackpropTrainer_PutsAfterStagnateSet(struct BackpropTrainer* trainer, const
 
 
 
-void BackpropTrainer_PrintfAfterStagnateBatch(struct BackpropTrainer* trainer, const struct BackpropTrainingStats* stats, struct BackpropNetwork* network, const BackpropTrainingSet_t* training_set, BACKPROP_SIZE_T batches, BACKPROP_FLOAT_T error)
+void BackpropTrainer_PrintfAfterStagnateBatch( struct BackpropTrainer* trainer
+                                             , const struct BackpropTrainingStats* stats
+                                             , struct BackpropNetwork* network
+                                             , const BackpropTrainingSet_t* training_set
+                                             , BACKPROP_SIZE_T batches
+                                             , BACKPROP_FLOAT_T error)
 {
   printf("stagnate_batch: { batch: %ld, error: %f }", batches, error);
 }
@@ -1499,7 +1516,11 @@ void BackpropTrainer_PutsAfterTrainSuccess(struct BackpropTrainer* trainer, cons
 
 
 
-void BackpropTrainer_PrintfAfterTrainFailure(struct BackpropTrainer* trainer, const struct BackpropTrainingStats* stats, struct BackpropNetwork* network, const BackpropTrainingSet_t* training_set, BACKPROP_FLOAT_T error)
+void BackpropTrainer_PrintfAfterTrainFailure( struct BackpropTrainer* trainer
+                                            , const struct BackpropTrainingStats* stats
+                                            , struct BackpropNetwork* network
+                                            , const BackpropTrainingSet_t* training_set
+                                            , BACKPROP_FLOAT_T error)
 {
   printf("train: { success: false, error: %f }", error);
 }
@@ -1555,6 +1576,47 @@ void BackpropTrainer_SetToDefaultIO(struct BackpropTrainer* trainer)
 }
 
 
+
+
+void BackpropTrainer_SetToVerboseIO(struct BackpropTrainer* trainer)
+{
+  BACKPROP_IO_ASSERT(trainer);
+  {
+    BackpropTrainer_SetToDefaultIO(trainer);
+
+    struct BackpropTrainerEvents* events = BackpropTrainer_GetEvents(trainer);
+
+    events->AfterInput = BackpropTrainer_PrintfAfterInput;
+    //events->AfterActivate = BackpropTainer_PrintfAfterActivate;
+    //events->AfterExercisePair = BackpropTrainer_PrintfAfterExercisePair;
+    //events->AfterExercise = BackpropTrainer_PrintfAfterExercise;
+    //
+    //events->BeforeTrain = BackpropTrainer_PrintfBeforeTrain;
+    //events->AfterTrainSuccess = BackpropTrainer_PrinfAfterTrainSuccess;
+    //events->AfterTrainFailure = BackpropTrainer_PrintfAfterTrainFailure;
+    //events->AfterTrain = BackpropTrainer_PrintfAfterTrain;
+    //
+    //events->BeforeTrainBatch = BackpropTrainer_PrintfBeforeTrainBatch;
+    //events->AfterTrainBatch = BackpropTrainer_PrintfAfterTrainBatch;
+    //
+    //events->AfterStagnateSet = BackpropTrainer_PrintfAfterStagnateSet;
+    //events->AfterMaxStagnateSets = BackpropTrainer_PrintfAfterMaxStagnateSets;
+    //events->AfterStubbornSet = BackpropTrainer_PrintfAfterStubbornSet;
+    //
+    //events->AfterStagnateBatch = BackpropTrainer_PrintfAfterStagnateBatch;
+    //events->AfterMaxStagnateBatches = BackpropTrainer_PrintfAfterMaxStagnateBatches;
+    //events->AfterStubbornBatch = BackpropTrainer_PrintfAfterStubbornBatch;
+    //
+    //events->BeforeTrainSet = BackpropTrainer_PrintfBeforeTrainSet;
+    //events->AfterTrainSet = BackpropTrainer_PrintfAfterTrainSet;
+    //
+    //events->BeforeTrainPair = BackpropTrainer_PrintfBeforeTrainPair;
+    //events->AfterTrainPair = BackpropTrainer_PrintfAfterTrainPair;
+    //
+    //events->BeforeTeachPair = BackpropTrainer_PrintfBeforeTeachPair;
+    //events->AfterTeachPair = BackpropTrainer_PrintfAfterTeachPair;
+  }
+}
 
 
 

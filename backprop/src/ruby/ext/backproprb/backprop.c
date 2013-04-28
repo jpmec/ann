@@ -2502,6 +2502,7 @@ BACKPROP_FLOAT_T BackpropTrainer_ExerciseConst(BackpropTrainer_t* trainer, Backp
 
     const BACKPROP_BYTE_T* x = training_set->x;
     const BACKPROP_BYTE_T* y = training_set->y;
+    const BACKPROP_SIZE_T x_size = training_set->dims.x_size;
 
     const size_t count = training_set->dims.count;
 
@@ -2509,11 +2510,11 @@ BACKPROP_FLOAT_T BackpropTrainer_ExerciseConst(BackpropTrainer_t* trainer, Backp
 
     for(size_t i = 0; i < count; ++i)
     {
-      BackpropNetwork_Input(network, x, training_set->dims.x_size);
+      BackpropNetwork_Input(network, x, x_size);
 
       if (trainer->events.AfterInput)
       {
-        trainer->events.AfterInput(network);
+        trainer->events.AfterInput(trainer, network, x, x_size);
       }
 
       BackpropNetwork_Activate(network);
@@ -2566,7 +2567,8 @@ BACKPROP_FLOAT_T BackpropTrainer_Exercise(BackpropTrainer_t* trainer, BackpropEx
 
 
 
-BACKPROP_FLOAT_T BackpropTrainer_TeachPair( BackpropTrainer_t* trainer, BackpropTrainingStats_t* stats
+BACKPROP_FLOAT_T BackpropTrainer_TeachPair( BackpropTrainer_t* trainer
+                                          , BackpropTrainingStats_t* stats
                                           , struct BackpropNetwork* network
                                           , const BACKPROP_BYTE_T* x, BACKPROP_SIZE_T x_size
                                           , const BACKPROP_BYTE_T* y_desired, BACKPROP_SIZE_T y_desired_size)
@@ -2593,7 +2595,7 @@ BACKPROP_FLOAT_T BackpropTrainer_TeachPair( BackpropTrainer_t* trainer, Backprop
 
     if (trainer->events.AfterInput)
     {
-      trainer->events.AfterInput(network);
+      trainer->events.AfterInput(trainer, network, x, x_size);
     }
 
     BackpropNetwork_Activate(network);
@@ -2656,9 +2658,13 @@ BACKPROP_FLOAT_T BackpropTrainer_TeachPair( BackpropTrainer_t* trainer, Backprop
 
             {
               const BACKPROP_FLOAT_T correction = correction_strength * (layer->x[j]);
-              weight_correction_total += fabs(correction);
+              const BACKPROP_FLOAT_T total_correction = correction + momentum + mutation;
 
-              (*W) += correction + momentum + mutation;
+//              printf("total_correction: %f\n", total_correction);
+
+              (*W) += total_correction;
+
+              weight_correction_total += fabs(correction);
             }
 
     //        *W_prev = *W;  // update for next round
@@ -2679,7 +2685,7 @@ BACKPROP_FLOAT_T BackpropTrainer_TeachPair( BackpropTrainer_t* trainer, Backprop
 
 
       // compute error and update weights
-      for(size_t k = network->layers.count - 1; k > 0; --k)  // for each layer in the network
+      for(BACKPROP_SIZE_T k = network->layers.count - 1; k > 0; --k)  // for each layer in the network
       {
         BackpropLayer_t* pl_next = &network->layers.data[k];
         layer = &network->layers.data[k-1];

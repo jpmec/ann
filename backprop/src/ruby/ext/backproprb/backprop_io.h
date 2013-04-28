@@ -194,6 +194,64 @@ size_t BackpropNetworkStats_Puts(const BackpropNetworkStats_t* self);
 void BackpropTrainer_SetToDefaultIO(struct BackpropTrainer* trainer);
 
 
+/** Set trainer to verbose I/O settings.
+ *  Will report all reportable data.
+ */
+void BackpropTrainer_SetToVerboseIO(struct BackpropTrainer* trainer);
+
+void BackpropTrainer_PrintfAfterInput( const struct BackpropTrainer* trainer
+                                     , const struct BackpropNetwork* network
+                                     , const BACKPROP_BYTE_T* x
+                                     , BACKPROP_SIZE_T x_size);
+
+void BackpropTainer_PrintfAfterActivate(struct BackpropTrainer* trainer);
+void BackpropTrainer_PrintfAfterExercisePair(struct BackpropTrainer* trainer);
+void BackpropTrainer_PrintfAfterExercise(struct BackpropTrainer* trainer);
+
+void BackpropTrainer_PrintfBeforeTrain(struct BackpropTrainer* trainer);
+void BackpropTrainer_PrinfAfterTrainSuccess(struct BackpropTrainer* trainer);
+
+void BackpropTrainer_PrintfAfterTrainFailure( struct BackpropTrainer* trainer
+                                            , const struct BackpropTrainingStats* stats
+                                            , struct BackpropNetwork* network
+                                            , const BackpropTrainingSet_t* training_set
+                                            , BACKPROP_FLOAT_T error);
+
+void BackpropTrainer_PrintfAfterTrain(struct BackpropTrainer* trainer);
+
+void BackpropTrainer_PrintfBeforeTrainBatch(struct BackpropTrainer* trainer);
+void BackpropTrainer_PrintfAfterTrainBatch(struct BackpropTrainer* trainer);
+
+
+void BackpropTrainer_PrintfAfterStagnateSet( struct BackpropTrainer* trainer
+                                           , const struct BackpropTrainingStats* stats
+                                           , struct BackpropNetwork* network
+                                           , const BackpropTrainingSet_t* training_set
+                                           , BACKPROP_SIZE_T batches
+                                           , BACKPROP_SIZE_T stagnate_sets
+                                           , BACKPROP_FLOAT_T error);
+
+void BackpropTrainer_PrintfAfterMaxStagnateSets(struct BackpropTrainer* trainer);
+void BackpropTrainer_PrintfAfterStubbornSet(struct BackpropTrainer* trainer);
+
+void BackpropTrainer_PrintfAfterStagnateBatch( struct BackpropTrainer* trainer
+                                             , const struct BackpropTrainingStats* stats
+                                             , struct BackpropNetwork* network
+                                             , const BackpropTrainingSet_t* training_set
+                                             , BACKPROP_SIZE_T batches
+                                             , BACKPROP_FLOAT_T error);
+
+void BackpropTrainer_PrintfAfterMaxStagnateBatches(struct BackpropTrainer* trainer);
+void BackpropTrainer_PrintfAfterStubbornBatch(struct BackpropTrainer* trainer);
+
+void BackpropTrainer_PrintfBeforeTrainSet(struct BackpropTrainer* trainer);
+
+void BackpropTrainer_PrintfBeforeTrainPair(struct BackpropTrainer* trainer);
+void BackpropTrainer_PrintfAfterTrainPair(struct BackpropTrainer* trainer);
+
+void BackpropTrainer_PrintfBeforeTeachPair(struct BackpropTrainer* trainer);
+
+
 void BackpropTrainer_PrintfAfterTeachPair( const struct BackpropTrainer* trainer
                                          , const BackpropTrainingStats_t* stats
                                          , const struct BackpropNetwork* network
@@ -212,7 +270,7 @@ void BackpropTrainer_PutsAfterTeachPair( const struct BackpropTrainer* trainer
                                        , BACKPROP_FLOAT_T error, BACKPROP_FLOAT_T weight_correction);
 
 
-void BackpropTrainer_FprintfAfterTrainSet(  FILE* file
+void BackpropTrainer_FprintfAfterTrainSet( FILE* file
                                          , struct BackpropTrainer* trainer
                                          , const struct BackpropTrainingStats* stats
                                          , struct BackpropNetwork* network
@@ -220,21 +278,26 @@ void BackpropTrainer_FprintfAfterTrainSet(  FILE* file
                                          , BACKPROP_FLOAT_T error);
 
 
-void BackpropTrainer_PrintfAfterTrainSet(  struct BackpropTrainer* trainer
+void BackpropTrainer_PrintfAfterTrainSet( struct BackpropTrainer* trainer
                                         , const struct BackpropTrainingStats* stats
                                         , struct BackpropNetwork* network
                                         , const BackpropTrainingSet_t* training_set
                                         , BACKPROP_FLOAT_T error);
 
 
-void BackpropTrainer_PutsAfterTrainSet(  struct BackpropTrainer* trainer
+void BackpropTrainer_PutsAfterTrainSet( struct BackpropTrainer* trainer
                                       , const struct BackpropTrainingStats* stats
                                       , struct BackpropNetwork* network
                                       , const BackpropTrainingSet_t* training_set
                                       , BACKPROP_FLOAT_T error);
 
 
-void BackpropTrainer_AfterTrainBatch(struct BackpropTrainer* trainer, const struct BackpropTrainingStats* stats, struct BackpropNetwork* network, const BackpropTrainingSet_t* training_set, BACKPROP_SIZE_T batches, BACKPROP_FLOAT_T error);
+void BackpropTrainer_AfterTrainBatch( struct BackpropTrainer* trainer
+                                    , const struct BackpropTrainingStats* stats
+                                    , struct BackpropNetwork* network
+                                    , const BackpropTrainingSet_t* training_set
+                                    , BACKPROP_SIZE_T batches
+                                    , BACKPROP_FLOAT_T error);
 
 
 void BackpropTrainer_PrintfAfterStagnateSet(struct BackpropTrainer* trainer, const struct BackpropTrainingStats* stats, struct BackpropNetwork* network, const BackpropTrainingSet_t* training_set, BACKPROP_SIZE_T batches, BACKPROP_SIZE_T stagnate_sets, BACKPROP_FLOAT_T error);
