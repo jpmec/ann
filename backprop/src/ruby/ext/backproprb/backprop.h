@@ -679,6 +679,7 @@ typedef struct BackpropConstTrainingSet
  */
 typedef struct BackpropTrainingStats
 {
+  BACKPROP_FLOAT_T pair_error_correction;
   BACKPROP_FLOAT_T set_weight_correction_total;
   BACKPROP_FLOAT_T batch_weight_correction_total;
   BACKPROP_SIZE_T teach_total;                      ///< Total teaching.

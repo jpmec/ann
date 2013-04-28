@@ -2650,11 +2650,11 @@ BACKPROP_FLOAT_T BackpropTrainer_TeachPair( BackpropTrainer_t* trainer
       trainer->events.AfterActivate(trainer, network);
     }
 
-    BACKPROP_FLOAT_T last_layer_error = BackpropTrainer_ComputeLastLayerError(network, y_desired, y_desired_size);
+    const BACKPROP_FLOAT_T begin_last_layer_error = BackpropTrainer_ComputeLastLayerError(network, y_desired, y_desired_size);
 
     if (trainer->events.AfterComputeLastLayerError)
     {
-      trainer->events.AfterComputeLastLayerError(trainer, network, last_layer_error);
+      trainer->events.AfterComputeLastLayerError(trainer, network, begin_last_layer_error);
     }
 
     error = BackpropTrainer_ComputeError(network, y_desired, y_desired_size);
@@ -2789,6 +2789,7 @@ BACKPROP_FLOAT_T BackpropTrainer_TeachPair( BackpropTrainer_t* trainer
         }
       }
     }
+
     // re-activate the network and compute the new error
     BackpropNetwork_Activate(network);
 
@@ -2797,11 +2798,11 @@ BACKPROP_FLOAT_T BackpropTrainer_TeachPair( BackpropTrainer_t* trainer
       trainer->events.AfterActivate(trainer, network);
     }
 
-    last_layer_error = BackpropTrainer_ComputeLastLayerError(network, y_desired, y_desired_size);
+    const BACKPROP_FLOAT_T end_last_layer_error = BackpropTrainer_ComputeLastLayerError(network, y_desired, y_desired_size);
 
     if (trainer->events.AfterComputeLastLayerError)
     {
-      trainer->events.AfterComputeLastLayerError(trainer, network, last_layer_error);
+      trainer->events.AfterComputeLastLayerError(trainer, network, end_last_layer_error);
     }
 
     error = BackpropTrainer_ComputeError(network, y_desired, y_desired_size);
@@ -2811,10 +2812,13 @@ BACKPROP_FLOAT_T BackpropTrainer_TeachPair( BackpropTrainer_t* trainer
       trainer->events.AfterComputeError(trainer, network, error);
     }
 
+    stats->pair_error_correction = end_last_layer_error - begin_last_layer_error;
+
     if (trainer->events.AfterTeachPair)
     {
       trainer->events.AfterTeachPair(trainer, stats, network, x, x_size, y_desired, y_desired_size, network->y.data, network->y.size, error, weight_correction_total);
     }
+
 
     stats->batch_weight_correction_total += weight_correction_total;
     stats->set_weight_correction_total += weight_correction_total;

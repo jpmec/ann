@@ -1635,6 +1635,19 @@ static VALUE CBackpropExerciseStats_new(VALUE klass)
 //------------------------------------------------------------------------------
 
 
+static VALUE CBackpropTrainingStats_pair_error_correction(VALUE self)
+{
+  BACKPROPRB_TRACE();
+
+  BackpropTrainingStats_t* stats;
+  Data_Get_Struct(self, BackpropTrainingStats_t, stats);
+
+  return rb_float_new(stats->pair_error_correction);
+}
+
+
+
+
 static VALUE CBackpropTrainingStats_set_weight_correction_total(VALUE self)
 {
   BACKPROPRB_TRACE();
@@ -2947,6 +2960,7 @@ void Init_backproprb()
   // Define class CBackproprb::CTrainingStats
   cBackpropTrainingStats = rb_define_class_under(cBackproprb, "TrainingStats", rb_cObject);
   rb_define_singleton_method(cBackpropTrainingStats, "new", CBackpropTrainingStats_new, 0);
+  rb_define_method(cBackpropTrainingStats, "pair_error_correction", CBackpropTrainingStats_pair_error_correction, 0);
   rb_define_method(cBackpropTrainingStats, "set_weight_correction_total", CBackpropTrainingStats_set_weight_correction_total, 0);
   rb_define_method(cBackpropTrainingStats, "batch_weight_correction_total", CBackpropTrainingStats_batch_weight_correction_total, 0);
   rb_define_method(cBackpropTrainingStats, "teach_total", CBackpropTrainingStats_teach_total, 0);

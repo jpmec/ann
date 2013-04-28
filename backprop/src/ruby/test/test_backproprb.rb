@@ -526,13 +526,10 @@ class CBackproprbTrainerTestCase  < Test::Unit::TestCase
     @training_stats = Backproprb::TrainingStats.new
     @sut = Backproprb::Trainer.new @network
 
-    @sut.set_to_verbose_io
-
     result = @sut.train_pair @training_stats, @network, "a", "b"
 
     assert_not_nil result
-    assert_equal 0, result
-    assert_equal "b", @network.activate("a")
+    assert 0 > @training_stats.pair_error_correction
 
     @network.to_file filename
   end

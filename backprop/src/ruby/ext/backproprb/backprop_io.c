@@ -1422,7 +1422,10 @@ void BackpropTrainer_PrintfAfterTeachPair( const struct BackpropTrainer* trainer
   BACKPROP_IO_ASSERT(stats);
   BACKPROP_IO_ASSERT(network);
 
-  printf("{ taught_pair: { error: %f, weight_correction: %f }}\n", error, weight_correction);
+  printf( "{ taught_pair: { error: %f, weight_correction: %f, error_correction: %f }}\n"
+        , error
+        , weight_correction
+        , stats->pair_error_correction);
 
 }
 
