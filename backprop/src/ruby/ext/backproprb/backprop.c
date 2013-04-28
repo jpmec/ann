@@ -42,7 +42,7 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 #define BACKPROP_MIN_GOLD    (0.3819660113)
 
 
-#define USE_BACKPROP_TRACE
+//#define USE_BACKPROP_TRACE
 
 #ifdef USE_BACKPROP_TRACE
 #include <stdio.h>
@@ -504,7 +504,7 @@ BACKPROP_SIZE_T BackpropLayer_GetXCount(const struct BackpropLayer* self)
 
 
 
-BACKPROP_FLOAT_T BackpropLayer_GetX(const struct BackpropLayer* self, size_t i)
+BACKPROP_FLOAT_T BackpropLayer_GetAtX(const struct BackpropLayer* self, size_t i)
 {
   BACKPROP_TRACE();
   BACKPROP_ASSERT(self);
@@ -534,7 +534,7 @@ BACKPROP_SIZE_T BackpropLayer_GetYCount(const struct BackpropLayer* self)
 
 
 
-BACKPROP_FLOAT_T BackpropLayer_GetY(const struct BackpropLayer* self, size_t i)
+BACKPROP_FLOAT_T BackpropLayer_GetAtY(const struct BackpropLayer* self, size_t i)
 {
   BACKPROP_TRACE();
   BACKPROP_ASSERT(self);

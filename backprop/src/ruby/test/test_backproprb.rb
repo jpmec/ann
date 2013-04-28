@@ -12,14 +12,14 @@ require 'json'
 class BackproprbTestCase < Test::Unit::TestCase
 
   def test_sigmoid
-    result = CBackproprb::sigmoid(0)
+    result = Backproprb::sigmoid(0)
 
     assert_equal(0.5, result)
   end
 
   def test_uniform_random_int
-    result1 = CBackproprb::uniform_random_int
-    result2 = CBackproprb::uniform_random_int
+    result1 = Backproprb::uniform_random_int
+    result2 = Backproprb::uniform_random_int
 
     assert_not_equal(result1, result2)
   end
@@ -32,13 +32,23 @@ end
 class BackproprbLayerTestCase < Test::Unit::TestCase
 
   def setup
-    @test_x_count = 8
-    @test_y_count = 8
+    @test_x_count = 1
+    @test_y_count = 1
+
+    puts "creating layer"
     @sut = Backproprb::Layer.new @test_x_count, @test_y_count
+    puts "created layer"
+  end
+
+  def test_setup
+    puts "test_setup"
+    assert_not_nil @sut
   end
 
   def test_x_count
-    assert_equal @test_x_count, @sut.x_count
+    puts "test_x_count"
+    result = @sut.x_count
+    assert_equal @test_x_count, result
   end
 
   def test_y_count
@@ -67,7 +77,7 @@ class BackproprbLayerTestCase < Test::Unit::TestCase
   end
 
   def test_W_sum
-    @sut.randomize 1
+    @sut.randomize 1, 0
 
     # compare method to ruby calculated sum
     sum1 = @sut.w_sum
@@ -77,7 +87,7 @@ class BackproprbLayerTestCase < Test::Unit::TestCase
   end
 
   def test_W_mean
-    @sut.randomize 1
+    @sut.randomize 1, 0
 
     mean1 = @sut.w_mean
     mean2 = (@sut.w.flatten.reduce :+) / @sut.w.flatten.length
@@ -86,7 +96,7 @@ class BackproprbLayerTestCase < Test::Unit::TestCase
   end
 
   def test_W_stddev
-    @sut.randomize 1
+    @sut.randomize 1, 0
 
     value = @sut.w_stddev
 
@@ -157,10 +167,10 @@ class BackproprbLayerTestCase < Test::Unit::TestCase
   end
 
   def test_randomize
-    @sut.randomize 1
+    @sut.randomize 1, 0
     w1 = @sut.w
 
-    @sut.randomize 1
+    @sut.randomize 1, 0
     w2 = @sut.w
 
     refute_equal w1, w2
@@ -173,8 +183,8 @@ class BackproprbLayerTestCase < Test::Unit::TestCase
 
   def test_activate
 
-    @sut.randomize 1
-    @sut.randomize 1
+    @sut.randomize 1, 0
+    @sut.randomize 1, 0
 
     @sut.x =  [0.0]
     @sut.activate
@@ -199,7 +209,7 @@ class BackproprbLayerTestCase < Test::Unit::TestCase
   end
 
   def test_prune
-    @sut.randomize 1
+    @sut.randomize 1, 0
     w1 = @sut.w
 
     @sut.prune 10
@@ -209,7 +219,7 @@ class BackproprbLayerTestCase < Test::Unit::TestCase
   end
 
   def test_from_hash_to_hash
-    @sut.randomize 1
+    @sut.randomize 1, 0
 
     x1 = Array.new(@sut.x.length)
     x1.map! { rand }
@@ -241,7 +251,9 @@ class BackproprbNetworkTestCase < Test::Unit::TestCase
     @test_y_size = 1
     @test_layers_count = 2
 
-    @sut = Backproprb::Network.new @test_x_size, @test_y_size, @test_layers_count
+    @sut = Backproprb::Network.new({"x_size" => @test_x_size,
+                                    "y_size" => @test_y_size,
+                                    "layer_count" => @test_layers_count});
   end
 
   def test__activate
@@ -294,7 +306,7 @@ class BackproprbNetworkTestCase < Test::Unit::TestCase
   end
 
   def test__randomize
-    @sut.randomize 1
+    @sut.randomize 1, 0
   end
 
   def test__reset
@@ -328,14 +340,21 @@ class BackproprbNetworkTestCase < Test::Unit::TestCase
     @sut.identity
     @sut.to_file filename
 
-    sut2 = Backproprb::Network.new @test_x_size, @test_y_size, @test_layers_count
-    sut2.randomize 2
+    sut2 = Backproprb::Network.new({"x_size" => @test_x_size,
+                                    "y_size" => @test_y_size,
+                                    "layer_count" => @test_layers_count})
+    sut2.randomize 2, 0
 
     sut2.from_file filename
 
     assert_equal @sut.to_hash, sut2.to_hash
 
   end
+
+  def test__deep_copy
+
+  end
+
 
   def teardown
   end
@@ -453,8 +472,8 @@ end
 class CBackproprbTrainerTestCase  < Test::Unit::TestCase
 
   def test__to_hash
-    @network = Backproprb::Network.new(1, 1, 2)
-    @network.randomize 2
+    @network = Backproprb::Network.new({"x_size"=>1, "y_size"=>1, "layer_count"=>2})
+    @network.randomize 2, 0
 
     @sut = Backproprb::Trainer.new @network
 
@@ -463,8 +482,8 @@ class CBackproprbTrainerTestCase  < Test::Unit::TestCase
 
 
   def test__exercise
-    @network = Backproprb::Network.new(1, 1, 2)
-    @network.randomize 2
+    @network = Backproprb::Network.new({"x_size"=>1, "y_size"=>1, "layer_count"=>2})
+    @network.randomize 2, 0
 
     @training_set = Backproprb::TrainingSet.new ["a", "b", "c"], ["x", "y", "z"]
     @exercise_stats = Backproprb::ExerciseStats.new
@@ -481,8 +500,8 @@ class CBackproprbTrainerTestCase  < Test::Unit::TestCase
   def test__teach_pair
     filename = "#{self.class}_#{__method__}.txt"
 
-    @network = Backproprb::Network.new(1, 1, 2)
-    @network.randomize 5
+    @network = Backproprb::Network.new({"x_size"=>1, "y_size"=>1, "layer_count"=>2})
+    @network.randomize 1, 0
     @network.from_file filename
 
     @training_stats = Backproprb::TrainingStats.new
@@ -501,8 +520,8 @@ class CBackproprbTrainerTestCase  < Test::Unit::TestCase
   def test__train_pair
     filename = "#{self.class}_#{__method__}.txt"
 
-    @network = Backproprb::Network.new(1, 1, 2)
-    @network.randomize 2
+    @network = Backproprb::Network.new({"x_size"=>1, "y_size"=>1, "layer_count"=>2})
+    @network.randomize 2, 0
     @network.from_file filename
 
     @training_stats = Backproprb::TrainingStats.new
@@ -521,8 +540,8 @@ class CBackproprbTrainerTestCase  < Test::Unit::TestCase
   def test__train_set
     filename = "#{self.class}_#{__method__}.txt"
 
-    @network = Backproprb::Network.new(1, 1, 2)
-    @network.randomize 2
+    @network = Backproprb::Network.new({"x_size"=>1, "y_size"=>1, "layer_count"=>2})
+    @network.randomize 2, 0
     @network.from_file filename
 
     @training_set = Backproprb::TrainingSet.new ["a"], ["b"]
@@ -542,8 +561,8 @@ class CBackproprbTrainerTestCase  < Test::Unit::TestCase
   def test__train_batch
     filename = "#{self.class}_#{__method__}.txt"
 
-    @network = Backproprb::Network.new(1, 1, 2)
-    @network.randomize 2
+    @network = Backproprb::Network.new({"x_size"=>1, "y_size"=>1, "layer_count"=>2})
+    @network.randomize 2, 0
     @network.from_file filename
 
     @training_set = Backproprb::TrainingSet.new ["a"], ["b"]
@@ -562,8 +581,8 @@ class CBackproprbTrainerTestCase  < Test::Unit::TestCase
 
 
   def test__train
-    @network = Backproprb::Network.new(1, 1, 2)
-    @network.randomize 2
+    @network = Backproprb::Network.new({"x_size"=>1, "y_size"=>1, "layer_count"=>2})
+    @network.randomize 2, 0
 
     @training_set = Backproprb::TrainingSet.new ["a"], ["b"]
     @training_stats = Backproprb::TrainingStats.new
@@ -617,8 +636,8 @@ class CBackproprbEvolverTestCase  < Test::Unit::TestCase
   def test__evolve_caeser_encode
     filename = "#{self.class}_#{__method__}.txt"
 
-    @network = Backproprb::Network.new(1, 1, 2)
-    @network.randomize 2
+    @network = Backproprb::Network.new({"x_size"=>1, "y_size"=>1, "layer_count"=>2})
+    @network.randomize 2, 0
 
     # evolve
     i = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"]
@@ -672,8 +691,8 @@ class CBackproprbEvolverTestCase  < Test::Unit::TestCase
   def test__evolve_caeser_decode
     filename = "#{self.class}_#{__method__}.txt"
 
-    @network = Backproprb::Network.new(1, 1, 2)
-    @network.randomize 2
+    @network = Backproprb::Network.new({"x_size"=>1, "y_size"=>1, "layer_count"=>2})
+    @network.randomize 2, 0
 
     # evolve
     i = ["d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "a", "b", "c"]
@@ -725,8 +744,8 @@ class CBackproprbEvolverTestCase  < Test::Unit::TestCase
   def test__evolve_xor
     filename = "#{self.class}_#{__method__}.txt"
 
-    @network = Backproprb::Network.new(2, 1, 2)
-    @network.randomize 2
+    @network = Backproprb::Network.new({"x_size"=>2, "y_size"=>1, "layer_count"=>2})
+    @network.randomize 2, 0
 
     # evolve
     i = ["00", "01", "10", "11"]

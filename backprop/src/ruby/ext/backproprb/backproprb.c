@@ -195,14 +195,13 @@ static VALUE CBackpropLayer_get_g(VALUE self)
   else
   {
     VALUE a = rb_ary_new();
-    BACKPROP_FLOAT_T* g = BackpropLayer_GetG(layer);
 
-    size_t i = BackpropLayer_GetYCount(layer);
-    do
+    const BACKPROP_SIZE_T y_count = BackpropLayer_GetYCount(layer);
+    for (BACKPROP_SIZE_T i = 0; i < y_count; ++i)
     {
-      rb_ary_push(a, rb_float_new(*g));
-      ++g;
-    } while(--i);
+      BACKPROP_FLOAT_T g = BackpropLayer_GetAtG(layer, i);
+      rb_ary_push(a, rb_float_new(g));
+    }
 
     return a;
   }
